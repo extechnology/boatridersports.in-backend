@@ -188,7 +188,11 @@ CORS_ALLOW_METHODS = [
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
-    "https://89r0jcnc-8000.inc1.devtunnels.ms"
+    "https://89r0jcnc-8000.inc1.devtunnels.ms",
+    "https://server.boatridersports.in/",
+    "https://www.server.boatridersports.in/",
+    "https://www.boatridersports.in/",
+    "https://boatridersports.in/"
 ]
 
 
