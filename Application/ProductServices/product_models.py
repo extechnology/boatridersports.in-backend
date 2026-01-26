@@ -10,7 +10,7 @@ from Application.AuthenticationServices.auth_models import User
 # Store the bike category universal
 class BikeCategoryModel(models.Model):
     category_name = models.CharField(max_length=255, unique=True)
-    category_image = models.ImageField(upload_to='_images/',null=True, blank=True)
+    category_image = models.ImageField(upload_to='_images/',null=True, blank=True,help_text="Upload the category image for the category, this is requiered")
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -21,8 +21,8 @@ class BikeCategoryModel(models.Model):
 # Store the bike brand universal
 class BikeBrandModel(models.Model):
     brand_name = models.CharField(max_length=255, unique=True)
-    brand_image = models.ImageField(upload_to='bike_brand_images/')
-    brand_description = models.TextField()
+    brand_image = models.ImageField(upload_to='bike_brand_images/',help_text="Upload the brand image for the brand, this is requiered and add png files only")
+    brand_description = models.TextField(null=True, blank=True)
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -98,7 +98,6 @@ class SpecialTagModel(models.Model):
     
     def __str__(self):
         return self.tag_name
-
 
 # ==========================================================================
 # End Glonbal Models
@@ -267,6 +266,7 @@ class BikeReviewsModel(models.Model):
 
 class AccessoriesCategoryModel(models.Model):
     name = models.CharField(max_length=255, help_text="Enter the name for the category")
+    image = models.ImageField(upload_to='accessory_category_images/',null=True, blank=True)
     
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)

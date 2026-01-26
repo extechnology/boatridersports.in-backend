@@ -56,7 +56,7 @@ class BikeBrandAdmin(admin.ModelAdmin):
     
     def preview_image(self, obj):
         if obj.brand_image:
-            return format_html('<img src="{}" width="50" height="50" style="object-fit: cover;" />', obj.brand_image.url)
+            return format_html('<img src="{}" width="100" height="25" style="object-fit: cover;" />', obj.brand_image.url)
         return "-"
     preview_image.short_description = "Preview"
 
@@ -146,7 +146,14 @@ class BikeAdmin(nested_admin.NestedModelAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('name','wheel_size','sizes','material','suspension','rear_suspension_travel', 'description', 'special_tag', 'brand', 'category', 'price','is_discount', 'discount_price', 'discount_percentage', 'background_color', 'text_color', 'is_dark', 'is_featured', 'featured_image', 'youtube_link')
+            'fields': (
+                'name','wheel_size','sizes','material','suspension',
+                'rear_suspension_travel', 'description', 'special_tag', 
+                'brand', 'category', 'price','is_discount', 'discount_price', 
+                'discount_percentage', 'background_color', 'text_color', 'is_dark', 
+                'is_featured', 'featured_image', 'youtube_link','is_available',
+                'is_out_of_stock','stock'
+                )
         }),
     )
     

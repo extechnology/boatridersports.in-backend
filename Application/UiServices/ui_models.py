@@ -13,3 +13,10 @@ class HomeSliderVideoModel(models.Model):
     def __str__(self):
         return self.title
     
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        cache.delete("home_slider_video")
+    
+    def clean(self):
+        if not self.pk and HomeSliderVideoModel.objects.exists():
+            raise ValidationError("Only one Home Slider Video is allowed.")

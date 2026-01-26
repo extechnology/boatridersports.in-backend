@@ -325,3 +325,15 @@ class AccessoriesSerializer(serializers.ModelSerializer):
             'is_dark',
             'created'
         ]
+
+
+class BikeBrandImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BikeBrandModel
+        fields = ['brand_image']
+    
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        if request:
+            return f"{request.scheme}://{request.get_host()}{instance.brand_image.url}"
+        return instance.brand_image.url

@@ -5,6 +5,7 @@ from rest_framework.decorators import api_view
 from rest_framework.generics import ListAPIView
 from django.core.cache import cache
 from rest_framework.pagination import PageNumberPagination
+from itertools import chain
 
 from .product_serializers import *
 from .product_models import *
@@ -45,48 +46,6 @@ class BikesAPIView(APIView):
         return Response(serializer.data)
 
 
-class BikesFilteredAPIView(APIView):
-    pagination_class = CustomPagination
-    filterset_class = BikeFilter
-
-    def get(self, request, *args, **kwargs):
-        # 1️⃣ Build unique cache key from query params
-        query_params = request.query_params.dict()
-        query_string = json.dumps(query_params, sort_keys=True)
-        cache_key = "bikes_filtered_" + hashlib.md5(query_string.encode()).hexdigest()
-
-        # 2️⃣ Try Redis first
-        cached_data = cache.get(cache_key)
-        if cached_data:
-            return Response(cached_data, status=status.HTTP_200_OK)
-
-        # 3️⃣ Apply filters manually
-        queryset = BikeModel.objects.all()
-        filterset = self.filterset_class(request.GET, queryset=queryset)
-
-        if not filterset.is_valid():
-            return Response(filterset.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        queryset = filterset.qs
-
-        # 4️⃣ Pagination
-        paginator = self.pagination_class()
-        page = paginator.paginate_queryset(queryset, request)
-
-        if page is not None:
-            serializer = BikeSerializer(page, many=True,context={'request': request})
-            response_data = paginator.get_paginated_response(serializer.data).data
-        else:
-            serializer = BikeSerializer(queryset, many=True,context={'request': request})
-            response_data = serializer.data
-
-        # 5️⃣ Store in Redis (10 minutes)
-        cache.set(cache_key, response_data, timeout=60 * 10)
-
-        return Response(response_data, status=status.HTTP_200_OK)
-
-
-
 class ProductsFilterSideBarAPIView(APIView):
     def get(self, request):
         sidebar = request.query_params.get("sidebar")
@@ -112,69 +71,6 @@ class ProductsFilterSideBarAPIView(APIView):
             
         return Response({})
 
-class ProductsFilteredAPIView(APIView):
-    pagination_class = CustomPagination  # reuse same pagination
-
-    def get(self, request, *args, **kwargs):
-        product_type = request.query_params.get("type")
-        # category = request.GET.getlist('category')
-        # print(category)
-
-        # 🔴 Validate type
-        if product_type not in ["bike", "accessories"]:
-            return Response(
-                {"error": "type query param must be 'bike' or 'accessory'"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # 1️⃣ Build cache key (type + filters)
-        query_params = request.query_params.dict()
-        query_string = json.dumps(query_params, sort_keys=True)
-        cache_key = f"{product_type}_filtered_" + hashlib.md5(query_string.encode()).hexdigest()
-
-        cached_data = cache.get(cache_key)
-        if cached_data:
-            return Response(cached_data, status=status.HTTP_200_OK)
-
-        # 2️⃣ Select model, filter, serializer dynamically
-        if product_type == "bike":
-            queryset = BikeModel.objects.all()
-            filterset_class = BikeFilter
-            serializer_class = BikeSerializer
-
-        elif product_type == "accessories":  # accessory
-            queryset = AccessoriesModel.objects.all()
-            filterset_class = AccessoriesFilter
-            serializer_class = AccessoriesSerializer
-
-        # 3️⃣ Apply filters
-        filterset = filterset_class(request.GET, queryset=queryset,request=request)
-
-        if not filterset.is_valid():
-            return Response(filterset.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        queryset = filterset.qs
-
-        # 4️⃣ Pagination
-        paginator = self.pagination_class()
-        page = paginator.paginate_queryset(queryset, request)
-
-        if page is not None:
-            serializer = serializer_class(
-                page, many=True, context={"request": request}
-            )
-            response_data = paginator.get_paginated_response(serializer.data).data
-        else:
-            serializer = serializer_class(
-                queryset, many=True, context={"request": request}
-            )
-            response_data = serializer.data
-
-        # 5️⃣ Cache result (10 minutes)
-        cache.set(cache_key, response_data, timeout=60 * 10)
-
-        return Response(response_data, status=status.HTTP_200_OK)
-
 class ProductDetailPage(APIView):
     def get(self, request, *args, **kwargs):
         product_id = kwargs.get("product_id")
@@ -191,7 +87,7 @@ class ProductDetailPage(APIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK) 
 
-class CustomProductFilterView(APIView):
+class ProductFilterView(APIView):
     pagination_class = CustomPagination
 
     def get(self, request):
@@ -306,3 +202,140 @@ class SuggestedProduct(APIView):
         bike_serializer = BikeSerializer(BikeProducts, many=True,context={'request': request})
             
         return Response(bike_serializer.data, status=status.HTTP_200_OK)
+
+class NavbarItemsAPIView(APIView):
+    def get(self, request):
+        query_params = request.query_params.dict()
+        query_string = json.dumps(query_params, sort_keys=True)
+        cache_key = f"navbar_items_{hashlib.md5(query_string.encode()).hexdigest()}"
+        cached_data = cache.get(cache_key)
+
+        if cached_data:
+            return Response(cached_data)
+
+        # ------------------ BIKE DATA ------------------
+        bike_categories = BikeCategoryModel.objects.all().order_by('-created')[:12]
+        bike_items = []
+
+        for category in bike_categories:
+            items = []
+            bikes = BikeModel.objects.filter(category=category).select_related('brand')
+
+            for bike in bikes:
+                bike_color = BikeColorsModel.objects.filter(bike=bike).first()
+                bike_image = BikeImagesModel.objects.filter(color=bike_color).first()
+
+                image = (
+                    f"{request.scheme}://{request.get_host()}{bike_image.image.url}"
+                    if bike_image else None
+                )
+
+                items.append({
+                    'unique_id': bike.unique_id,
+                    'product_type': bike.product_type,
+                    'name': bike.name,
+                    'image': image,
+                    'price': bike.price,
+                    'brand': bike.brand.brand_name,
+                    'is_discound': bike.is_discount,
+                    'discount_price': bike.discount_price,
+                    'discount_percentage': bike.discount_percentage,
+                })
+
+            bike_items.append({
+                'title': category.category_name,
+                'image': (
+                    f"{request.scheme}://{request.get_host()}{category.category_image.url}"
+                    if category.category_image else None
+                ),
+                'items': items
+            })
+
+        # ------------------ ACCESSORIES DATA ------------------
+        accessories_categories = AccessoriesCategoryModel.objects.all().order_by('-created')[:12]
+        accessories_items = []
+
+        for category in accessories_categories:
+            items = []
+            accessories = AccessoriesModel.objects.filter(
+                sub_category__category=category
+            ).select_related('brand')
+
+            for accessory in accessories:
+                images = AccessoryImagesModel.objects.filter(accessory=accessory).first()
+                image = (
+                    f"{request.scheme}://{request.get_host()}{images.image.url}"
+                    if images else None
+                )
+
+                items.append({
+                    'unique_id': accessory.unique_id,
+                    'product_type': accessory.product_type,
+                    'name': accessory.name,
+                    'image': image,
+                    'price': accessory.price,
+                    'brand': accessory.brand.brand_name if accessory.brand else None,
+                    'is_discound': accessory.is_discount,
+                    'discount_price': accessory.discount_price,
+                    'discount_percentage': accessory.discount_percentage,
+                })
+
+            accessories_items.append({
+                'title': category.name,
+                'image': (
+                    f"{request.scheme}://{request.get_host()}{category.image.url}"
+                    if category.image else None
+                ),
+                'items': items
+            })
+
+        response_data = {
+            'bikes': bike_items,
+            'accessories': accessories_items
+        }
+
+        # 🔥 Store in Redis
+        cache.set(cache_key, response_data, timeout=60 * 10)
+
+        return Response(response_data)
+
+
+class ShopBuy(APIView):
+    def get(self, request):
+        bike_categories = BikeCategoryModel.objects.all().order_by('-created')[:12]
+        accessories_categories = AccessoriesCategoryModel.objects.all().order_by('-created')[:12]
+        
+        def get_category_data(category):
+            """Normalize field access across different category models"""
+            if isinstance(category, BikeCategoryModel):
+                name = category.category_name
+                image = category.category_image
+            else:  # AccessoriesCategoryModel
+                name = category.name
+                image = category.image
+            
+            return {
+                'title': name,
+                'image': request.build_absolute_uri(image.url) if image else None,
+                'type': 'bike' if isinstance(category, BikeCategoryModel) else 'accessories'
+            }
+        
+        categories = [
+            get_category_data(category) 
+            for category in chain(bike_categories, accessories_categories)
+        ]
+        
+        return Response(categories)
+
+
+class FeaturdProduct(APIView):
+    def get(self, request):
+        bike_products = BikeModel.objects.filter(is_available=True,is_out_of_stock=False,is_featured=True).order_by('-created')[:4]
+        bike_serializer = BikeSerializer(bike_products, many=True,context={'request': request})
+        return Response(bike_serializer.data)
+
+class BrandsImages(APIView):
+    def get(self, request):
+        bikebrands = BikeBrandModel.objects.all()
+        serializer = BikeBrandImageSerializer(bikebrands, many=True,context={'request': request})
+        return Response(serializer.data)
