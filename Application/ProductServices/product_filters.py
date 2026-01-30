@@ -84,7 +84,7 @@ class BikeFilter(filters.FilterSet):
         return queryset
 
     # ---------- PRICE FILTERS ----------
-
+    is_discount = filters.BooleanFilter(field_name="is_discount")
     def filter_min_price(self, queryset, name, value):
         return queryset.filter(
             Q(is_discount=True, discount_price__gte=value) |

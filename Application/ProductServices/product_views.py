@@ -302,6 +302,10 @@ class NavbarItemsAPIView(APIView):
 
 class ShopBuy(APIView):
     def get(self, request):
+        cache_key = f"shop_buy_{hashlib.md5(request.query_params.urlencode().encode()).hexdigest()}"
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return Response(cached_data, status=status.HTTP_200_OK)
         bike_categories = BikeCategoryModel.objects.all().order_by('-created')[:12]
         accessories_categories = AccessoriesCategoryModel.objects.all().order_by('-created')[:12]
         
@@ -324,7 +328,7 @@ class ShopBuy(APIView):
             get_category_data(category) 
             for category in chain(bike_categories, accessories_categories)
         ]
-        
+        cache.set(cache_key, categories, timeout=60 * 10)
         return Response(categories)
 
 
@@ -336,6 +340,11 @@ class FeaturdProduct(APIView):
 
 class BrandsImages(APIView):
     def get(self, request):
+        cache_key = f"brands_images_{hashlib.md5(request.query_params.urlencode().encode()).hexdigest()}"
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return Response(cached_data, status=status.HTTP_200_OK)
         bikebrands = BikeBrandModel.objects.all()
         serializer = BikeBrandImageSerializer(bikebrands, many=True,context={'request': request})
+        cache.set(cache_key, serializer.data, timeout=60 * 10)
         return Response(serializer.data)
