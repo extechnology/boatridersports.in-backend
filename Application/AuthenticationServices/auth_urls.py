@@ -21,4 +21,5 @@ urlpatterns = [
     path('password/change/', ChangePasswordView.as_view(), name='change-password'),
     
     path('google-auth/', GoogleAuthView.as_view(), name='google-auth'),
+    
 ]
