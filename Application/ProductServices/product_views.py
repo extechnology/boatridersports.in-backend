@@ -348,3 +348,4 @@ class BrandsImages(APIView):
         serializer = BikeBrandImageSerializer(bikebrands, many=True,context={'request': request})
         cache.set(cache_key, serializer.data, timeout=60 * 10)
         return Response(serializer.data)
+    

@@ -88,6 +88,7 @@ class ResentOTPSerializer(serializers.Serializer):
             # send_registration_otp_sms(identifier, otp)  # Implement SMS sending logic here
 
         return {'message': 'OTP - Sended','otp': otp}
+        
 class EmailOTPVerifySerializer(serializers.Serializer):
     identifier = serializers.CharField(required=True)
     otp = serializers.CharField(max_length=6)

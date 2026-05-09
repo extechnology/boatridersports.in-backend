@@ -36,6 +36,7 @@ from google.auth.transport import requests as google_requests
 
 from django.conf import settings
 
+
 # ---------------------------------------- Authentication Views --------------------------------------------------------------
 
 
@@ -213,6 +214,7 @@ class LoginView(APIView):
 
         # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
+        print(user.username)
 
         response = Response({
             "message": "Login successful",
@@ -232,6 +234,7 @@ class LoginView(APIView):
     
 class LogoutView(APIView):
     def post(self, request):
+
         response = Response({
             "message": "Logged out successfully"
         }, status=status.HTTP_200_OK)
@@ -274,45 +277,65 @@ class RefreshTokenView(APIView):
         )
 
         return response
-    
+
+
+from Application.ProfileServices.profile_models import UserAddress
+from Application.OrderServices.order_models import UserOrdersModel,BikeOrderItems,AccessoriesOrderItems 
+from Application.CartServices.usercart_models import UserCartModel,UserCartItemsModelBike,UserCartItemsModelAccessories
+
+from django.db.models import Sum
+
 class CheckLoginView(APIView):
     def get(self, request):
         user = get_user_from_request(request)
+
+        # ✅ Step 1 & 2: Check if user is authenticated (via request or cookies)
+        if not user or isinstance(user, AnonymousUser) or not user.is_authenticated:
+            access_token = request.COOKIES.get('access_token')
+            if not access_token:
+                return Response({
+                    'is_logged_in': False,
+                    'message': 'No access token found'
+                }, status=status.HTTP_401_UNAUTHORIZED)
+            try:
+                # ✅ Step 3: Verify JWT token
+                token = AccessToken(access_token)
+                user = User.objects.get(id=token['user_id'])
+            except Exception as e:
+                return Response({
+                    'is_logged_in': False,
+                    'message': f'Invalid or expired token: {str(e)}'
+                }, status=status.HTTP_401_UNAUTHORIZED)
+
+        # ✅ Step 4: If authenticated, gather stats efficiently
+        cart = UserCartModel.objects.filter(user=user).first()
+        cart_count = 0
+        if cart:
+            cart_count = (UserCartItemsModelBike.objects.filter(user_cart=cart).count() + 
+                          UserCartItemsModelAccessories.objects.filter(user_cart=cart).count())
+
+        total_spend_raw = UserOrdersModel.objects.filter(user=user).aggregate(
+            total=Sum('total_amount')
+        )['total'] or 0
         
-        print("CheckLoginView: Retrieved user:", user)
+        def format_amount(num):
+            try:
+                num = float(num)
+                if num >= 1_000_000_000:
+                    return f"{num / 1_000_000_000:.1f}B".replace('.0B', 'B')
+                elif num >= 1_000_000:
+                    return f"{num / 1_000_000:.1f}M".replace('.0M', 'M')
+                elif num >= 10_000: # "more than 4 digits" means 10,000+
+                    return f"{num / 1_000:.1f}K".replace('.0K', 'K')
+                return int(num) if num.is_integer() else round(num, 2)
+            except (ValueError, TypeError):
+                return num
 
-        # ✅ Step 1: Check if user is authenticated
-        if user and not isinstance(user, AnonymousUser) and user.is_authenticated:
-            return Response({
-                'is_logged_in': True,
-                'user': {
-                    'id': user.id,
-                    'username': user.username,
-                    'email': user.email,
-                    'phone': getattr(user, 'phone', None),
-                }
-            }, status=status.HTTP_200_OK)
+        total_spend = format_amount(total_spend_raw)
+        
+        total_order_items = (BikeOrderItems.objects.filter(order__user=user).count() + 
+                             AccessoriesOrderItems.objects.filter(order__user=user).count())
 
-        # ✅ Step 2: Check token in cookies if not authenticated
-        access_token = request.COOKIES.get('access_token')
-        if not access_token:
-            return Response({
-                'is_logged_in': False,
-                'message': 'No access token found'
-            }, status=status.HTTP_401_UNAUTHORIZED)
-
-        # ✅ Step 3: Verify JWT token
-        try:
-            token = AccessToken(access_token)
-            user_id = token['user_id']
-            user = User.objects.get(id=user_id)
-        except Exception as e:
-            return Response({
-                'is_logged_in': False,
-                'message': f'Invalid or expired token: {str(e)}'
-            }, status=status.HTTP_401_UNAUTHORIZED)
-
-        # ✅ Step 4: If token valid, return user info
         return Response({
             'is_logged_in': True,
             'user': {
@@ -320,6 +343,10 @@ class CheckLoginView(APIView):
                 'username': user.username,
                 'email': user.email,
                 'phone': getattr(user, 'phone', None),
+                'total_orders': total_order_items,
+                'address_count': UserAddress.objects.filter(user=user).count(),
+                'cart_count': cart_count,
+                'total_spend': total_spend
             }
         }, status=status.HTTP_200_OK)
         
@@ -480,16 +507,34 @@ class GoogleAuthView(APIView):
             return Response({"message": "Token is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            idinfo = id_token.verify_oauth2_token(token, google_requests.Request(), audience="933629412968-6ap8h0f5repil5akr2reubfnl5qmbt3m.apps.googleusercontent.com")
+            # Check if it's a JWT ID Token (3 segments separated by dots)
+            if token.count('.') == 2:
+                idinfo = id_token.verify_oauth2_token(token, google_requests.Request(), audience=GOOGLE_CLIENT_ID)
+                if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+                    raise ValueError('Wrong issuer.')
+                email = idinfo.get('email')
+                fullname = idinfo.get('name')
+            else:
+                # Otherwise, treat it as an OAuth2 Access Token
+                import requests
+                userinfo_response = requests.get(
+                    'https://www.googleapis.com/oauth2/v3/userinfo',
+                    headers={'Authorization': f'Bearer {token}'}
+                )
+                if not userinfo_response.ok:
+                    raise ValueError('Invalid Google Access Token.')
+                
+                userinfo = userinfo_response.json()
+                email = userinfo.get('email')
+                fullname = userinfo.get('name')
 
-            if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
-                raise ValueError('Wrong issuer.')
+            if not email:
+                raise ValueError('Email not found in Google response.')
 
-            google_user_id = idinfo['sub']
-            email = idinfo.get('email')
-            fullname = idinfo.get('name')
-
-            user, created = User.objects.get_or_create(email=email, defaults={'username': email.split('@')[0], 'fullname': fullname})
+            user, created = User.objects.get_or_create(
+                email=email, 
+                defaults={'username': email.split('@')[0], 'fullname': fullname}
+            )
 
             user.is_email_verified = True
             user.save()
@@ -501,7 +546,10 @@ class GoogleAuthView(APIView):
                 'access_token': str(refresh.access_token),
                 'refresh_token': str(refresh)
             }, status=status.HTTP_200_OK)
-            
+
+            response.set_cookie("access_token", str(refresh.access_token), httponly=True, secure=True, samesite='None', max_age=360000)
+            response.set_cookie("refresh_token", str(refresh), httponly=True, secure=True, samesite='None', max_age=7 * 24 * 360000)
+
             return response
 
         except ValueError as e:

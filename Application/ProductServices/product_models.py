@@ -24,6 +24,7 @@ class BikeBrandModel(models.Model):
     brand_image = models.ImageField(upload_to='bike_brand_images/',help_text="Upload the brand image for the brand, this is requiered and add png files only")
     brand_description = models.TextField(null=True, blank=True)
 
+    online_purchase_enabled = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
@@ -103,11 +104,9 @@ class SpecialTagModel(models.Model):
 # End Glonbal Models
 # ==========================================================================
 
-
 # ==========================================================================
 # Bike Models
 # ==========================================================================
-
 
 # bike model
 class BikeModel(models.Model):
@@ -123,7 +122,7 @@ class BikeModel(models.Model):
 
     product_type = models.CharField(max_length=255,default = 'bike',editable=False)
     wheel_size = models.ManyToManyField(WheelSizeModel,related_name='bike_wheel_sizes')
-    sizes = models.ManyToManyField(SizeModel,related_name='bike_sizes',null=True, blank=True)
+    sizes = models.ManyToManyField(SizeModel,related_name='bike_sizes', blank=True)
     material = models.ManyToManyField(MaterialModel,related_name='bake_materials')
     suspension = models.ManyToManyField(SuspensionModel,related_name='bike_suspensions')
     rear_suspension_travel = models.ManyToManyField(RearSuspensionTravelModel,related_name='bike_rear_suspension_travels')
@@ -148,6 +147,10 @@ class BikeModel(models.Model):
     
     youtube_link = models.TextField(null=True, blank=True, help_text="Enter the youtube link for the bike")
     
+    online_purchase_enabled = models.BooleanField(default=True)
+    shipping_charge = models.DecimalField(max_digits=10, decimal_places=2,default=0)
+
+
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     
@@ -159,6 +162,10 @@ class BikeModel(models.Model):
             self.is_out_of_stock = True
         else:
             self.is_out_of_stock = False
+    
+        if self.brand.online_purchase_enabled == False:
+            self.online_purchase_enabled = False
+            
         super().save(*args, **kwargs)
 
 # bike sizes
@@ -304,9 +311,17 @@ class AccessoriesModel(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     
+    online_purchase_enabled = models.BooleanField(default=True)
+    shipping_charge = models.DecimalField(max_digits=10, decimal_places=2,default=0)
+
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        if self.brand and self.brand.online_purchase_enabled == False:
+            self.online_purchase_enabled = False
+        super().save(*args, **kwargs)
+    
     def get_discounted_price(self):
         if self.discount_price:
             return self.discount_price
@@ -345,3 +360,16 @@ class GuideAndTrainerModel(models.Model):
 
 
 
+class ShippingChargeModel(models.Model):
+    NAME_OPTIONS =(
+        ('bike','bike'),
+        ('accessory','accessory'),
+    )
+    name = models.CharField(max_length=255,choices=NAME_OPTIONS, default='bike', help_text="Enter the name for the shipping charge",unique = True)
+    charge = models.DecimalField(max_digits=10, decimal_places=2, help_text="Enter the charge for the shipping")
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return self.name

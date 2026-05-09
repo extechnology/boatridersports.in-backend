@@ -1,3 +1,4 @@
+from Application.ProductServices.product_models import ShippingChargeModel
 import nested_admin
 from django.contrib import admin
 from django.utils.html import format_html
@@ -49,8 +50,8 @@ class BikeCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(BikeBrandModel)
 class BikeBrandAdmin(admin.ModelAdmin):
-    list_display = ('brand_name', 'preview_image', 'created')
-    list_filter = ('created',)
+    list_display = ('brand_name', 'preview_image','online_purchase_enabled', 'created')
+    list_filter = ('created','online_purchase_enabled')
     search_fields = ('brand_name', 'brand_description')
     readonly_fields = ('preview_image',)
     
@@ -140,7 +141,7 @@ class BikeDownloadsModelInline(nested_admin.NestedStackedInline):
 class BikeAdmin(nested_admin.NestedModelAdmin):
     list_display = ('brand_img','name', 'special_tag', 'brand', 'category', 'price', 'discount_price', 'discount_percentage')
     search_fields = ('name', 'special_tag', 'brand', 'category', 'price', 'discount_price', 'discount_percentage')
-    list_filter = ('name', 'special_tag', 'brand', 'category', 'price', 'discount_price', 'discount_percentage')
+    list_filter = ('name', 'special_tag', 'brand', 'category', 'price', 'discount_price', 'discount_percentage','online_purchase_enabled')
 
     inlines = [BikeColorsModelNestedInline,BikeSpecLabelModelInline,BikePostersModelInline,BikeDownloadsModelInline]
 
@@ -152,7 +153,7 @@ class BikeAdmin(nested_admin.NestedModelAdmin):
                 'brand', 'category', 'price','is_discount', 'discount_price', 
                 'discount_percentage', 'background_color', 'text_color', 'is_dark', 
                 'is_featured', 'featured_image', 'youtube_link','is_available',
-                'is_out_of_stock','stock'
+                'is_out_of_stock','stock','online_purchase_enabled','shipping_charge'
                 )
         }),
     )
@@ -191,4 +192,8 @@ class GuideAndTrainerAdmin(admin.ModelAdmin):
     search_fields = ('name',)
     list_filter = ('created',)
 
-
+@admin.register(ShippingChargeModel)
+class ShippingChargeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'charge', 'created')
+    search_fields = ('name',)
+    list_filter = ('created','name')

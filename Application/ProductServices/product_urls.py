@@ -12,4 +12,5 @@ urlpatterns = [
     path('shop-buy/', ShopBuy.as_view(), name='shop-buy'),
     path('featured-product/', FeaturdProduct.as_view(), name='featured-product'),
     path('brands-images/', BrandsImages.as_view(), name='brands-images'),
+    
 ]

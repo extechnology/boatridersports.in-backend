@@ -43,7 +43,7 @@ class BikeCategorySerializer(serializers.ModelSerializer):
 class BikeBrandSerializer(serializers.ModelSerializer):
     class Meta:
         model = BikeBrandModel
-        fields = ['brand_name', 'brand_image', 'brand_description']
+        fields = ['brand_name', 'brand_image', 'brand_description','online_purchase_enabled']
 
 
 class ColorSerializer(serializers.ModelSerializer):
@@ -241,6 +241,8 @@ class BikeSerializer(serializers.ModelSerializer):
             'bike_spec_labels',
             'bike_posters',
             'bike_downloads',
+            'online_purchase_enabled',
+            'shipping_charge',
 
             'created'
         ]
@@ -323,6 +325,8 @@ class AccessoriesSerializer(serializers.ModelSerializer):
             'sub_category', 
             'accessory_images',
             'is_dark',
+            'online_purchase_enabled',
+            'shipping_charge',
             'created'
         ]
 

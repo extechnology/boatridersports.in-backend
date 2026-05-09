@@ -1,5 +1,7 @@
 from django.utils.translation import ugettext_lazy as _
+# pyrefly: ignore [missing-import]
 from jet.dashboard import modules
+# pyrefly: ignore [missing-import]
 from jet.dashboard.dashboard import Dashboard, AppIndexDashboard
 
 

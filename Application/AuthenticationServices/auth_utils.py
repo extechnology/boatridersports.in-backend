@@ -7,7 +7,6 @@ User = get_user_model()
 def get_user_from_request(request):
 
     access_token = None
-    
 
     # 1️⃣ Check Authorization header (Bearer <token>)
     auth_header = request.headers.get('Authorization')
