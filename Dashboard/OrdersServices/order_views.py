@@ -162,8 +162,7 @@ class OrderStatusUpdate(APIView):
     permission_classes = [IsSuperUserAuthenticated]
     serializer_class = OrderStatusUpdateSerializer
     
-    def patch(self, request):
-        order_id = request.data.get('order_id')
+    def patch(self, request, order_id):
         deliverd_at = request.data.get('deliverd_at')
         tracking_id = request.data.get('tracking_id')
         shipped_via = request.data.get('shipped_via')
