@@ -8,4 +8,8 @@ class IsUserAuthenticated(BasePermission):
 
 class IsSuperUserAuthenticated(BasePermission):
     def has_permission(self, request, view):
-        return bool(get_user_from_request(request) and get_user_from_request(request).is_superuser)
+        user= request.user 
+        if not user:
+            user = get_user_from_request(request)
+        print(user)
+        return bool(user and user.is_superuser)

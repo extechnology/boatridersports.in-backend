@@ -43,13 +43,13 @@ class SuperUserLogin(APIView):
 
         response = Response({
             "message": "Login successful",
-            # "access_token": str(refresh.access_token),
-            # "refresh_token": str(refresh)
+            "access_token": str(refresh.access_token),
+            "refresh_token": str(refresh)
         }, status=status.HTTP_200_OK)
 
         # Set cookies
-        response.set_cookie("access_token", str(refresh.access_token), httponly=True, secure=True, samesite='None', max_age=360000)
-        response.set_cookie("refresh_token", str(refresh), httponly=True, secure=True, samesite='None', max_age=7 * 24 * 360000)
+        # response.set_cookie("access_token", str(refresh.access_token), httponly=True, secure=True, samesite='None', max_age=360000)
+        # response.set_cookie("refresh_token", str(refresh), httponly=True, secure=True, samesite='None', max_age=7 * 24 * 360000)
 
 
         return response
@@ -57,7 +57,9 @@ class SuperUserLogin(APIView):
 
 class CheckLoginView(APIView):
     def get(self, request):
-        user = get_user_from_request(request)
+        user = get_user_from_request(request) 
+        if not user:
+            user = request.user
 
         # ✅ Step 1 & 2: Check if user is authenticated (via request or cookies)
         if not user or isinstance(user, AnonymousUser) or not user.is_authenticated:
