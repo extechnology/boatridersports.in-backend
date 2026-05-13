@@ -159,24 +159,35 @@ class InitaiteChcekOutAPIview(APIView):
             'order': user_order_serialized_data
         }, status=status.HTTP_200_OK)
 
-
 class VerifyOrderPayment(APIView):
     permission_classes = [IsUserAuthenticated]
 
-    def post(self,request):
+    def post(self, request):
         user = get_user_from_request(request)
         order_id = request.data.get("order_id")
-        
-        print(order_id)
-        
-        if not order_id:
-            return Response({"status": "error", "message": "Missing order_id field"}, status=status.HTTP_400_BAD_REQUEST)
 
+        print(order_id)
+
+        if not order_id:
+            return Response(
+                {
+                    "status": "error",
+                    "message": "Missing order_id field"
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         try:
             user_order = UserOrdersModel.objects.get(unique_id=order_id)
+
         except UserOrdersModel.DoesNotExist:
-            return Response({"status": "error", "message": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {
+                    "status": "error",
+                    "message": "Order not found"
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
 
         client = Cashfree(XEnvironment=Cashfree.XEnvironment)
 
@@ -185,42 +196,91 @@ class VerifyOrderPayment(APIView):
                 x_api_version=x_api_version,
                 order_id=order_id
             )
-            
-            order_data = order_response.data if hasattr(order_response, 'data') else order_response
-            
+
+            order_data = (
+                order_response.data
+                if hasattr(order_response, 'data')
+                else order_response
+            )
+
             if order_data.order_status == "PAID":
+
                 user_order.status = 'Processing'
                 user_order.payment_status = True
                 user_order.save()
-                bike_id  = BikeOrderItems.objects.filter(order=user_order).values('bike_id')
-                if bike_id:
-                    bike = BikeModel.objects.filter(unique_id__in=bike_id).first()
-                    bike.stock -= 1
-                    bike.save()
-                accessory_id  = AccessoriesOrderItems.objects.filter(order=user_order).values('accessory_id')
-                if accessory_id:
-                    accessory = AccessoriesModel.objects.filter(unique_id__in=accessory_id).first()
-                    accessory.stock -= 1
-                    accessory.save()
-        
-        
+
+                # Update bike stock
+                bike_items = BikeOrderItems.objects.filter(order=user_order)
+
+                for item in bike_items:
+
+                    if item.bike:
+
+                        if item.bike.stock >= item.quantity:
+                            item.bike.stock -= item.quantity
+                        else:
+                            item.bike.stock = 0
+
+                        item.bike.save()
+
+                # Update accessory stock
+                accessory_items = AccessoriesOrderItems.objects.filter(
+                    order=user_order
+                )
+
+                for item in accessory_items:
+
+                    if item.accessory:
+
+                        if item.accessory.stock >= item.quantity:
+                            item.accessory.stock -= item.quantity
+                        else:
+                            item.accessory.stock = 0
+
+                        item.accessory.save()
+
+                # Send confirmation email
                 order_confirmation_email(user_order)
-                
+
+                # Clear cart
                 try:
                     cart = UserCartModel.objects.get(user=user)
                     cart.delete()
+
                 except UserCartModel.DoesNotExist:
                     pass
-                
-                return Response({"status": "success", "message": "Payment verified successfully", "order_status": user_order.status}, status=status.HTTP_200_OK)
+
+                return Response(
+                    {
+                        "status": "success",
+                        "message": "Payment verified successfully",
+                        "order_status": user_order.status
+                    },
+                    status=status.HTTP_200_OK
+                )
+
             else:
+
                 user_order.status = 'Failed'
                 user_order.save()
-                return Response({"status": "failed", "message": f"Payment not completed. Status: {order_data.order_status}"}, status=status.HTTP_400_BAD_REQUEST)
-                
-        except Exception as e:
-            return Response({"status": "error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+                return Response(
+                    {
+                        "status": "failed",
+                        "message": f"Payment not completed. Status: {order_data.order_status}"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        except Exception as e:
+
+            return Response(
+                {
+                    "status": "error",
+                    "message": str(e)
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class UserOrders(APIView):
     permission_classes = [IsUserAuthenticated]
