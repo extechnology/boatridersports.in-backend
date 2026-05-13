@@ -193,7 +193,10 @@ CSRF_TRUSTED_ORIGINS = [
     "https://server.boatridersports.in/",
     "https://www.server.boatridersports.in/",
     "https://www.boatridersports.in/",
-    "https://boatridersports.in/"
+    "https://boatridersports.in/",
+    "http://localhost:8080",
+    "https://dashboard.boatridersports.in/",
+    "https://www.dashboard.boatridersports.in/"
 ]
 
 
