@@ -90,7 +90,7 @@ class InitaiteChcekOutAPIview(APIView):
         )
 
         orderMeta = OrderMeta(
-            return_url=f"http://localhost:3000/order-success?order_id={order_id}"
+            return_url=f"https://boatridersports.in/order-success?order_id={order_id}"
         )
 
         pg_order_amount = float(amount)
