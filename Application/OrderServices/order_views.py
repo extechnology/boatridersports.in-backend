@@ -192,12 +192,12 @@ class VerifyOrderPayment(APIView):
                 user_order.status = 'Processing'
                 user_order.payment_status = True
                 user_order.save()
-                bike_id  = BikeOrderItems.objects.filter(order=order_id).values('bike_id')
+                bike_id  = BikeOrderItems.objects.filter(order=user_order).values('bike_id')
                 if bike_id:
                     bike = BikeModel.objects.filter(unique_id__in=bike_id).first()
                     bike.stock -= 1
                     bike.save()
-                accessory_id  = AccessoriesOrderItems.objects.filter(order=order_id).values('accessory_id')
+                accessory_id  = AccessoriesOrderItems.objects.filter(order=user_order).values('accessory_id')
                 if accessory_id:
                     accessory = AccessoriesModel.objects.filter(unique_id__in=accessory_id).first()
                     accessory.stock -= 1
