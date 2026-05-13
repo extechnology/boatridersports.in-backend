@@ -153,6 +153,7 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
@@ -185,18 +186,40 @@ CORS_ALLOW_METHODS = [
     'PUT',
 ]
 
+CORS_ALLOWED_ORIGINS = [
 
-CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:8080",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
     "https://89r0jcnc-8000.inc1.devtunnels.ms",
-    "https://server.boatridersports.in/",
-    "https://www.server.boatridersports.in/",
-    "https://www.boatridersports.in/",
-    "https://boatridersports.in/",
-    "http://localhost:8080/",
-    "https://dashboard.boatridersports.in/",
-    "https://www.dashboard.boatridersports.in/"
+    "https://server.boatridersports.in",
+    "https://www.server.boatridersports.in",
+    "https://www.boatridersports.in",
+    "https://boatridersports.in",
+    "http://localhost:8080",
+    "https://dashboard.boatridersports.in",
+    "https://www.dashboard.boatridersports.in",
+    "http://127.0.0.1:8080",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:8080",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "https://89r0jcnc-8000.inc1.devtunnels.ms",
+    "https://server.boatridersports.in",
+    "https://www.server.boatridersports.in",
+    "https://www.boatridersports.in",
+    "https://boatridersports.in",
+    "http://localhost:8080",
+    "https://dashboard.boatridersports.in",
+    "https://www.dashboard.boatridersports.in",
+    "http://127.0.0.1:8080",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
 ]
 
 
