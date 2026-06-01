@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.cache import cache
 
 class HomeSliderVideoModel(models.Model):
     desktop_video = models.FileField(upload_to='home_slider_videos/',null=True,blank=True,help_text="Upload home slider video")
