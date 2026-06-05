@@ -124,8 +124,8 @@ class BikeModel(models.Model):
     wheel_size = models.ManyToManyField(WheelSizeModel,related_name='bike_wheel_sizes')
     sizes = models.ManyToManyField(SizeModel,related_name='bike_sizes', blank=True)
     material = models.ManyToManyField(MaterialModel,related_name='bake_materials')
-    suspension = models.ManyToManyField(SuspensionModel,related_name='bike_suspensions')
-    rear_suspension_travel = models.ManyToManyField(RearSuspensionTravelModel,related_name='bike_rear_suspension_travels')
+    suspension = models.ManyToManyField(SuspensionModel,related_name='bike_suspensions',null=True, blank=True)
+    rear_suspension_travel = models.ManyToManyField(RearSuspensionTravelModel,related_name='bike_rear_suspension_travels',null=True, blank=True)
 
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock = models.IntegerField(default=0)
