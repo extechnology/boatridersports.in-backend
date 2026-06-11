@@ -41,7 +41,8 @@ class CustomPagination(PageNumberPagination):
 
 class BikesAPIView(APIView):
     def get(self, request):
-        bikes = BikeModel.objects.all()
+        bikes = BikeModel.objects.all().order_by('-created')
+
         serializer = BikeSerializer(bikes, many=True,context={'request': request})
         return Response(serializer.data)
 

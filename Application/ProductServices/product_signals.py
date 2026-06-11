@@ -1,5 +1,6 @@
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
+from django.core.cache import cache
 from .product_tasks import build_bike_sidebar, build_accessory_sidebar
 from .product_models import (
     BikeCategoryModel,
@@ -20,6 +21,10 @@ from .product_models import (
     AccessoriesSubCategoryModel,
     AccessoriesCategoryModel,
     GuideAndTrainerModel,
+    BikeSpecLabelModel,
+    BikeSpecValueModel,
+    BikePostersModel,
+    BikeDownloadsModel,
 )
 
 # ONE function – multiple senders
@@ -41,9 +46,22 @@ from .product_models import (
 @receiver([post_save, post_delete], sender=AccessoriesModel)
 @receiver([post_save, post_delete], sender=AccessoriesSubCategoryModel)
 @receiver([post_save, post_delete], sender=AccessoriesCategoryModel)
+@receiver([post_save, post_delete], sender=BikeSpecLabelModel)
+@receiver([post_save, post_delete], sender=BikeSpecValueModel)
+@receiver([post_save, post_delete], sender=BikePostersModel)
+@receiver([post_save, post_delete], sender=BikeDownloadsModel)
 def refresh_sidebar(sender, **kwargs):
     build_bike_sidebar.delay()
     build_accessory_sidebar.delay()
+
+    # Clear cached lists and details to make new/updated products visible
+    try:
+        cache.delete_pattern("products_*")
+        cache.delete_pattern("navbar_items_*")
+        cache.delete_pattern("shop_buy_*")
+        cache.delete_pattern("brands_images_*")
+    except AttributeError:
+        cache.clear()
 
 
 
