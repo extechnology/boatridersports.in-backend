@@ -1,7 +1,6 @@
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.core.cache import cache
-from .product_tasks import build_bike_sidebar, build_accessory_sidebar
 from .product_models import (
     BikeCategoryModel,
     BikeBrandModel,
@@ -51,9 +50,6 @@ from .product_models import (
 @receiver([post_save, post_delete], sender=BikePostersModel)
 @receiver([post_save, post_delete], sender=BikeDownloadsModel)
 def refresh_sidebar(sender, **kwargs):
-    build_bike_sidebar.delay()
-    build_accessory_sidebar.delay()
-
     # Clear cached lists and details to make new/updated products visible
     try:
         cache.delete_pattern("products_*")

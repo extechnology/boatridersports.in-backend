@@ -9,7 +9,6 @@ from itertools import chain
 
 from .product_serializers import *
 from .product_models import *
-from .product_tasks import build_bike_sidebar,build_accessory_sidebar
 
 from .product_filters import bike_filters,accessories_filters
 from django.db.models import Prefetch,Subquery
@@ -52,22 +51,44 @@ class ProductsFilterSideBarAPIView(APIView):
         sidebar = request.query_params.get("sidebar")
         
         if sidebar == "bike":
-
-            data = cache.get("sidebar_bike")
-            if not data:
-                # Call synchronously for immediate response
-                data = build_bike_sidebar()
-                # Optionally trigger async refresh in background
-                build_bike_sidebar.delay()
+            data = {
+                "categories": list(BikeCategoryModel.objects.values_list("category_name", flat=True)),
+                "brands": list(BikeBrandModel.objects.values_list("brand_name", flat=True)),
+                "sizes": list(SizeModel.objects.values_list("size", flat=True)),
+                "wheel_sizes": list(WheelSizeModel.objects.values_list("wheel_size", flat=True)),
+                "materials": list(MaterialModel.objects.values_list("material", flat=True)),
+                "suspensions": list(SuspensionModel.objects.values_list("suspension", flat=True)),
+                "rearSuspensionTravel": list(
+                    RearSuspensionTravelModel.objects.values_list("rear_suspension_travel", flat=True)
+                ),
+                "colors": [
+                    {
+                        "name": c.color_name,
+                        "code": list(filter(None, [c.color_code, c.color_code_2]))
+                    }
+                    for c in ColorModel.objects.all()
+                ],
+                "product_type": "bike",
+                "special_tags": list(SpecialTagModel.objects.values_list("tag_name", flat=True))
+            }
             return Response(data)
             
         elif sidebar == "accessories":
-            data = cache.get("sidebar_accessory")
-            if not data:
-                # Call synchronously for immediate response
-                data = build_accessory_sidebar()
-                # Optionally trigger async refresh in background
-                build_accessory_sidebar.delay()
+            data = {
+                "categories": list(
+                    AccessoriesCategoryModel.objects.values_list("name", flat=True)
+                ),
+                "sub_categories": list(
+                    AccessoriesSubCategoryModel.objects.values_list("name", flat=True)
+                ),
+                "brands": list(
+                    BikeBrandModel.objects.values_list("brand_name", flat=True)
+                ),
+                "product_type": "accessories",  
+                "special_tags": list(
+                    SpecialTagModel.objects.values_list("tag_name", flat=True)
+                )
+            }
             return Response(data)
             
         return Response({})
