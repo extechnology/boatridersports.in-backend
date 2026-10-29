@@ -37,6 +37,11 @@ class UserOrdersModel(models.Model):
     deliverd_at = models.DateTimeField(null=True, blank=True)
     tracking_id = models.CharField(max_length=200, null=True, blank=True)
     shipped_via = models.CharField(max_length=200, null=True, blank=True)
+
+    payment_gateway = models.CharField(max_length=50, default='cashfree', null=True, blank=True)
+    razorpay_order_id = models.CharField(max_length=100, null=True, blank=True, db_index=True)
+    razorpay_payment_id = models.CharField(max_length=100, null=True, blank=True)
+    razorpay_signature = models.CharField(max_length=255, null=True, blank=True)
     
 
     def __str__(self):

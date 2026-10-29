@@ -14,10 +14,16 @@ from pathlib import Path
 import os
 from django.utils import timezone
 from datetime import timedelta
-from decouple import config
+from decouple import Config, RepositoryEnv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+env_file = BASE_DIR / '.env'
+if env_file.exists():
+    config = Config(RepositoryEnv(str(env_file)))
+else:
+    from decouple import config
 
 USE_L10N = True
 USE_TZ = True
@@ -349,3 +355,7 @@ CACHES = {
 
 CASHFREE_CLIENT_ID = config('CASHFREE_CLIENT_ID')
 CASHFREE_CLIENT_SECRET = config('CASHFREE_CLIENT_SECRET')
+
+RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID', default='')
+RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET', default='')
+RAZORPAY_WEBHOOK_SECRET = config('RAZORPAY_WEBHOOK_SECRET', default='')

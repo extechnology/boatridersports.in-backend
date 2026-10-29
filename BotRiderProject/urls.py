@@ -24,6 +24,7 @@ urlpatterns = [
     path('jet/dashboard/', include('jet.dashboard.urls', 'jet-dashboard')),
     path('admin/', admin.site.urls),
     path('api/', include('Application.urls')),
+    path('api/api/', include('Application.urls')),  # Fallback for frontend base URLs configured with duplicate /api
     path('api/dashboard/', include('Dashboard.urls')),
 ]
 

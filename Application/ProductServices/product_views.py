@@ -93,19 +93,30 @@ class ProductsFilterSideBarAPIView(APIView):
             
         return Response({})
 
+from django.core.exceptions import ValidationError
+
 class ProductDetailPage(APIView):
     def get(self, request, *args, **kwargs):
         product_id = kwargs.get("product_id")
         product_type = kwargs.get("product_type")
 
-        if product_type == "bike":
-            product = BikeModel.objects.get(unique_id=product_id)
-            serializer = BikeSerializer(product,context={'request': request})
-        elif product_type == "accessories":
-            product = AccessoriesModel.objects.get(unique_id=product_id)
-            serializer = AccessoriesSerializer(product,context={'request': request})
-        else:
-            return Response({"error": "Invalid product type"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            if product_type == "bike":
+                if str(product_id).isdigit():
+                    product = BikeModel.objects.get(id=int(product_id))
+                else:
+                    product = BikeModel.objects.get(unique_id=product_id)
+                serializer = BikeSerializer(product, context={'request': request})
+            elif product_type == "accessories":
+                if str(product_id).isdigit():
+                    product = AccessoriesModel.objects.get(id=int(product_id))
+                else:
+                    product = AccessoriesModel.objects.get(unique_id=product_id)
+                serializer = AccessoriesSerializer(product, context={'request': request})
+            else:
+                return Response({"error": "Invalid product type"}, status=status.HTTP_400_BAD_REQUEST)
+        except (BikeModel.DoesNotExist, AccessoriesModel.DoesNotExist, ValidationError, ValueError):
+            return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
 
         return Response(serializer.data, status=status.HTTP_200_OK) 
 
