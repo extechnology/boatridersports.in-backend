@@ -16,6 +16,7 @@ from .order_serializers import OrderStatusUpdateSerializer
 from .order_utils import order_updation_mail
 from ..pagination import DashboardPagination
 
+
 class TotalOrdersAPIView(APIView):
     permission_classes = [IsSuperUserAuthenticated]
     pagination_class = DashboardPagination
@@ -74,46 +75,128 @@ class TotalOrdersAPIView(APIView):
             if search_query:
                 orders_q = orders_q.filter(
                     Q(unique_id__icontains=search_query) |
-                    Q(user__first_name__icontains=search_query) |
-                    Q(user__last_name__icontains=search_query) |
+                    Q(user__username__icontains=search_query) |
+                    Q(user__fullname__icontains=search_query) |
                     Q(user__email__icontains=search_query) |
+                    Q(user__phone__icontains=search_query) |
+                    Q(user_address__name__icontains=search_query) |
+                    Q(user_address__phone_number__icontains=search_query) |
+                    Q(user_address__address__icontains=search_query) |
+                    Q(user_address__city__icontains=search_query) |
+                    Q(user_address__state__icontains=search_query) |
+                    Q(user_address__pincode__icontains=search_query) |
                     Q(status__icontains=search_query)
-                )
+                ).distinct()
 
             if start_date:
                 orders_q = orders_q.filter(created_at__range=[start_date, end_date])
 
             export_format = request.GET.get('export', '').lower()
             if export_format == 'excel':
-                response = HttpResponse(content_type='text/csv')
+                response = HttpResponse(content_type='text/csv; charset=utf-8')
                 response['Content-Disposition'] = 'attachment; filename="orders_export.csv"'
-                
+                response.write('\ufeff')  # UTF-8 BOM for Microsoft Excel
+
                 writer = csv.writer(response)
-                # Header
+                # Header with customer details and full address fields
                 writer.writerow([
-                    'Order ID', 'Order Date', 'Customer Name', 'Customer Email', 'Customer Phone',
-                    'Order Status', 'Payment Status', 'Order Total', 
-                    'Product Type', 'Product Name', 'Category', 'Color', 'Size',
-                    'Price', 'Quantity', 'Subtotal'
+                    'Order ID',
+                    'Order Date',
+                    'Customer Name',
+                    'Customer Email',
+                    'Customer Phone',
+                    'Address Type',
+                    'Delivery Address',
+                    'City',
+                    'State',
+                    'Pincode',
+                    'Full Address',
+                    'Order Status',
+                    'Payment Status',
+                    'Payment Gateway',
+                    'Tracking ID',
+                    'Shipped Via',
+                    'Order Total',
+                    'Product Type',
+                    'Product Name',
+                    'Category',
+                    'Color',
+                    'Size',
+                    'Price',
+                    'Quantity',
+                    'Subtotal'
                 ])
-                
+
                 for order in orders_q.select_related('user', 'user_address').prefetch_related(
-                    'bike_orders__bike', 'bike_orders__color__color', 'bike_orders__size',
-                    'accessories_orders__accessory'
+                    'bike_orders__bike__category', 'bike_orders__color__color', 'bike_orders__size',
+                    'accessories_orders__accessory__sub_category__category'
                 ):
                     order_date = order.created_at.strftime('%Y-%m-%d %H:%M') if getattr(order, 'created_at', None) else 'N/A'
-                    user_name = order.user_address.name if getattr(order, 'user_address', None) else f"{order.user.first_name} {order.user.last_name}"
-                    user_email = order.user.email if getattr(order, 'user', None) else 'N/A'
-                    user_phone = getattr(order.user, 'phone', 'N/A')
+
+                    addr = getattr(order, 'user_address', None)
+                    user = getattr(order, 'user', None)
+
+                    # Customer Name
+                    if addr and addr.name:
+                        user_name = addr.name
+                    elif user:
+                        user_name = user.fullname or user.username or 'N/A'
+                    else:
+                        user_name = 'N/A'
+
+                    # Customer Email
+                    user_email = user.email if user and user.email else 'N/A'
+
+                    # Customer Phone
+                    if addr and addr.phone_number:
+                        user_phone = addr.phone_number
+                    elif user and getattr(user, 'phone', None):
+                        user_phone = user.phone
+                    else:
+                        user_phone = 'N/A'
+
+                    # Address fields
+                    address_type = addr.address_type if addr and addr.address_type else 'N/A'
+                    street_address = addr.address if addr and addr.address else 'N/A'
+                    city = addr.city if addr and addr.city else 'N/A'
+                    state = addr.state if addr and addr.state else 'N/A'
+                    pincode = addr.pincode if addr and addr.pincode else 'N/A'
+
+                    if addr:
+                        parts = [p for p in [addr.address, addr.city, addr.state] if p]
+                        full_address = ", ".join(parts)
+                        if addr.pincode:
+                            full_address = f"{full_address} - {addr.pincode}" if full_address else addr.pincode
+                    else:
+                        full_address = 'N/A'
+
                     order_status = order.status
                     payment_status = 'Paid' if order.payment_status else 'Unpaid'
+                    payment_gateway = order.payment_gateway or 'N/A'
+                    tracking_id = order.tracking_id or 'N/A'
+                    shipped_via = order.shipped_via or 'N/A'
                     order_total = str(order.total_amount)
-                    
+
                     base_row = [
-                        order.unique_id, order_date, user_name, user_email, user_phone,
-                        order_status, payment_status, order_total
+                        order.unique_id,
+                        order_date,
+                        user_name,
+                        user_email,
+                        user_phone,
+                        address_type,
+                        street_address,
+                        city,
+                        state,
+                        pincode,
+                        full_address,
+                        order_status,
+                        payment_status,
+                        payment_gateway,
+                        tracking_id,
+                        shipped_via,
+                        order_total
                     ]
-                    
+
                     # Bikes
                     for b in order.bike_orders.all():
                         p_type = 'Bike'
@@ -124,30 +207,37 @@ class TotalOrdersAPIView(APIView):
                         price = str(b.price)
                         qty = str(b.quantity)
                         subtotal = str(b.subtotal)
-                        
+
                         writer.writerow(base_row + [p_type, p_name, cat, color, size, price, qty, subtotal])
-                        
+
                     # Accessories
                     for a in order.accessories_orders.all():
                         p_type = 'Accessory'
                         p_name = a.accessory.name if getattr(a, 'accessory', None) else 'Unknown Accessory'
-                        cat = a.accessory.sub_category.category.name if getattr(a, 'accessory', None) and getattr(a.accessory, 'sub_category', None) else 'N/A'
+                        cat = a.accessory.sub_category.category.name if (
+                            getattr(a, 'accessory', None) and
+                            getattr(a.accessory, 'sub_category', None) and
+                            getattr(a.accessory.sub_category, 'category', None)
+                        ) else 'N/A'
                         color = 'N/A'
                         size = 'N/A'
                         price = str(a.price)
                         qty = str(a.quantity)
                         subtotal = str(a.subtotal)
-                        
+
                         writer.writerow(base_row + [p_type, p_name, cat, color, size, price, qty, subtotal])
-                        
+
                     # If order has no items for some reason
                     if not order.bike_orders.exists() and not order.accessories_orders.exists():
-                         writer.writerow(base_row + ['N/A', 'N/A', 'N/A', 'N/A', 'N/A', '0', '0', '0'])
-                        
+                        writer.writerow(base_row + ['N/A', 'N/A', 'N/A', 'N/A', 'N/A', '0', '0', '0'])
+
                 return response
 
-
-            paginator =DashboardPagination()
+            paginator = DashboardPagination()
+            orders_q = orders_q.select_related('user', 'user_address').prefetch_related(
+                'bike_orders__bike__category', 'bike_orders__color__color', 'bike_orders__size',
+                'accessories_orders__accessory__sub_category__category'
+            )
             paginated_qs = paginator.paginate_queryset(orders_q, request)
 
             serializer = UserOrdersModelSerializerDashboard(paginated_qs, many=True, context={"request": request})
@@ -157,11 +247,11 @@ class TotalOrdersAPIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-class OrderStatusUpdate(APIView):
 
+class OrderStatusUpdate(APIView):
     permission_classes = [IsSuperUserAuthenticated]
     serializer_class = OrderStatusUpdateSerializer
-    
+
     def patch(self, request, order_id):
         deliverd_at = request.data.get('deliverd_at')
         tracking_id = request.data.get('tracking_id')
@@ -186,4 +276,3 @@ class OrderStatusUpdate(APIView):
             return Response({"message": "Order status updated successfully"}, status=status.HTTP_200_OK)
         except UserOrdersModel.DoesNotExist:
             return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
-
