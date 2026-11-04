@@ -11,14 +11,22 @@ ENV/
 env.bak/
 venv.bak/
 **/venv
+
 # Python bytecode & cache
-_pycache_/
+__pycache__/
 *.py[cod]
 *$py.class
 *.so
-**/_pycache_
-*/.pyc
-
+*.pyc
+*.pyo
+*.pyd
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/__pycache__/**
+**/__pycache__/
+.cache
+.pytest_cache/
 
 # Django
 db.sqlite3
@@ -26,8 +34,6 @@ db.sqlite3-*
 *.sqlite3
 *.sqlite3-journal
 *.db
-db.sqlite3
-db.sqlite3-journal
 local_settings.py
 staticfiles/
 static_root/
@@ -35,14 +41,11 @@ media/
 !media/.htaccess
 !media/**/.htaccess
 
-
 # Logs
 *.log
 logs/
 
 # Pytest / Coverage / Testing
-.cache
-.pytest_cache/
 .coverage
 .coverage.*
 htmlcov/
