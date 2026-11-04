@@ -6,6 +6,11 @@ from Application.EventServices.event_models import Event, EventRegistration
 class EventRegistrationDashboardSerializer(serializers.ModelSerializer):
     event_id = serializers.CharField(source='event.id', read_only=True)
     event_title = serializers.CharField(source='event.title', read_only=True)
+    event_date = serializers.CharField(source='event.date', read_only=True)
+    event_time = serializers.CharField(source='event.time', read_only=True)
+    event_location = serializers.CharField(source='event.location', read_only=True)
+    event_category = serializers.CharField(source='event.category', read_only=True)
+    event_category_label = serializers.CharField(source='event.category_label', read_only=True)
     ticket_code = serializers.CharField(source='registration_number', read_only=True)
 
     class Meta:
@@ -17,6 +22,11 @@ class EventRegistrationDashboardSerializer(serializers.ModelSerializer):
             'event',
             'event_id',
             'event_title',
+            'event_date',
+            'event_time',
+            'event_location',
+            'event_category',
+            'event_category_label',
             'user',
             'full_name',
             'phone',
