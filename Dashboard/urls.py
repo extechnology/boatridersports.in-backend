@@ -1,4 +1,4 @@
-from django.urls import path,include
+from django.urls import path, include
 from .views import *
 
 urlpatterns = [
@@ -9,10 +9,9 @@ urlpatterns = [
     path('categories/', include('Dashboard.CategoryServices.category_urls')),
     path('contact/', include('Dashboard.ContactServices.contact_urls')),
     path('products/', include('Dashboard.ProductServices.product_urls')),
-    
+    path('events/', include('Dashboard.EventServices.event_dashboard_urls')),
 
     path('login/', SuperUserLogin.as_view(), name='superuser-login'),
     path('check-login/', CheckLoginView.as_view(), name='check-login'),
     path('logout/', LogoutView.as_view(), name='logout'),
-
 ]

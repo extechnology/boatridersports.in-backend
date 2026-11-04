@@ -6,6 +6,7 @@ from Application.OrderServices.order_admin import *
 from Application.CartServices.usercart_admin import *
 from Application.ProfileServices.profile_admin import *
 from Application.ContactServices.contact_admin import *
+from Application.EventServices.event_admin import *
 
 
 # Register your models here.

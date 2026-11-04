@@ -4,3 +4,4 @@ from Application.ProductServices.product_models import *
 from Application.ProfileServices.profile_models import *
 from Application.CartServices.usercart_models import *
 from Application.OrderServices.order_models import *
+from Application.EventServices.event_models import *

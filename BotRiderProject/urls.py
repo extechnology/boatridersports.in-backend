@@ -15,7 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path,include
+from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -26,6 +26,7 @@ urlpatterns = [
     path('api/', include('Application.urls')),
     path('api/api/', include('Application.urls')),  # Fallback for frontend base URLs configured with duplicate /api
     path('api/dashboard/', include('Dashboard.urls')),
+    path('api/admin/events/', include('Dashboard.EventServices.event_dashboard_urls')),
 ]
 
 if settings.DEBUG:
