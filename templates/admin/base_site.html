@@ -1,0 +1,295 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+<div id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a></div>
+{% endblock %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" type="text/css" href="{% static 'admin/css/admin_enhanced_contrast.css' %}">
+  <style>
+    /* ==========================================================================
+       Admin High-Contrast & Clear Field Definition Stylesheet
+       ========================================================================== */
+
+    /* 1. Main Background & Contrast */
+    body, #content {
+        background-color: #f8fafc !important;
+        color: #0f172a !important;
+    }
+
+    /* 2. Form Inputs, Textareas & Selects: Crisp Dark Borders and Solid White Background */
+    .change-form input[type="text"],
+    .change-form input[type="password"],
+    .change-form input[type="email"],
+    .change-form input[type="url"],
+    .change-form input[type="number"],
+    .change-form input[type="tel"],
+    .change-form textarea,
+    .change-form select,
+    .change-form .select2-container .select2-choice,
+    #changelist input[type="text"],
+    #changelist select {
+        border: 1.5px solid #94a3b8 !important;
+        background-color: #ffffff !important;
+        color: #0f172a !important;
+        font-size: 13.5px !important;
+        font-weight: 500 !important;
+        padding: 8px 12px !important;
+        border-radius: 6px !important;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
+        box-sizing: border-box !important;
+        min-height: 38px !important;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+    }
+
+    .change-form input:hover,
+    .change-form textarea:hover,
+    .change-form select:hover {
+        border-color: #475569 !important;
+    }
+
+    .change-form input:focus,
+    .change-form textarea:focus,
+    .change-form select:focus,
+    .change-form .select2-container-active .select2-choice {
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.2) !important;
+        outline: none !important;
+        background-color: #ffffff !important;
+    }
+
+    /* 3. Field Labels: Bold & High Contrast */
+    .change-form .form-row label,
+    .change-form .form-row > div > label,
+    .change-form .form-row > label {
+        color: #0f172a !important;
+        font-weight: 700 !important;
+        font-size: 13px !important;
+        letter-spacing: 0.01em !important;
+        margin-bottom: 5px !important;
+        display: inline-block !important;
+    }
+
+    /* 4. Help Text & Instructions: Sharp, Visible Slate */
+    .change-form .form-row .help,
+    .change-form .help,
+    .change-form .help-block {
+        color: #475569 !important;
+        font-size: 12px !important;
+        font-weight: 500 !important;
+        margin-top: 5px !important;
+        margin-bottom: 2px !important;
+        line-height: 1.45 !important;
+        display: block !important;
+    }
+
+    /* 5. Section Description Banners */
+    .change-form .module .description,
+    .change-form fieldset .description {
+        background: #f0fdf4 !important;
+        border: 1px solid #86efac !important;
+        border-left: 4px solid #16a34a !important;
+        color: #14532d !important;
+        padding: 12px 16px !important;
+        border-radius: 6px !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        margin: 12px 0 20px 0 !important;
+        line-height: 1.5 !important;
+    }
+
+    /* 6. Tabs Header: Bold Pills with Clear Active Tab */
+    .changeform-tabs {
+        background: #f1f5f9 !important;
+        border: 1.5px solid #cbd5e1 !important;
+        border-radius: 8px 8px 0 0 !important;
+        padding: 8px 10px !important;
+        margin-bottom: 0 !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+    }
+
+    .changeform-tabs-item {
+        margin: 0 !important;
+        float: none !important;
+        display: inline-block !important;
+    }
+
+    .changeform-tabs-item-link {
+        color: #334155 !important;
+        background: #e2e8f0 !important;
+        font-weight: 600 !important;
+        font-size: 12px !important;
+        padding: 8px 16px !important;
+        border-radius: 6px !important;
+        text-decoration: none !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.04em !important;
+        transition: all 0.15s ease !important;
+        display: inline-block !important;
+        border: 1px solid transparent !important;
+    }
+
+    .changeform-tabs-item:hover .changeform-tabs-item-link {
+        background: #cbd5e1 !important;
+        color: #0f172a !important;
+    }
+
+    .changeform-tabs-item.selected .changeform-tabs-item-link {
+        background: #2563eb !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        border-color: #1d4ed8 !important;
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.35) !important;
+    }
+
+    /* 7. Fieldset & Module Card */
+    .change-form fieldset.module.aligned,
+    .change-form .module {
+        background: #ffffff !important;
+        border: 1.5px solid #cbd5e1 !important;
+        border-top: none !important;
+        border-radius: 0 0 8px 8px !important;
+        padding: 24px 28px !important;
+        box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 2px 4px -2px rgba(15, 23, 42, 0.04) !important;
+        margin-bottom: 28px !important;
+    }
+
+    .change-form .form-row {
+        border-bottom: 1px solid #f1f5f9 !important;
+        padding: 14px 8px !important;
+        transition: background-color 0.15s ease !important;
+    }
+
+    .change-form .form-row:hover {
+        background-color: #fafbfc !important;
+        border-radius: 4px !important;
+    }
+
+    /* 8. Breadcrumbs */
+    .breadcrumbs {
+        background: #ffffff !important;
+        border: 1.5px solid #cbd5e1 !important;
+        border-radius: 6px !important;
+        padding: 10px 16px !important;
+        font-size: 12.5px !important;
+        color: #475569 !important;
+        margin-bottom: 18px !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+    }
+
+    .breadcrumbs a {
+        color: #2563eb !important;
+        font-weight: 600 !important;
+        text-decoration: none !important;
+    }
+
+    .breadcrumbs a:hover {
+        text-decoration: underline !important;
+        color: #1d4ed8 !important;
+    }
+
+    /* 9. Submit Action Bar */
+    .submit-row {
+        background: #ffffff !important;
+        border: 1.5px solid #cbd5e1 !important;
+        border-radius: 8px !important;
+        padding: 16px 22px !important;
+        margin-top: 28px !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 10px !important;
+        align-items: center !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    .submit-row input[type="submit"].default {
+        background: #2563eb !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 13.5px !important;
+        padding: 10px 24px !important;
+        border-radius: 6px !important;
+        border: none !important;
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3) !important;
+        cursor: pointer !important;
+    }
+
+    .submit-row input[type="submit"].default:hover {
+        background: #1d4ed8 !important;
+    }
+
+    .submit-row input[name="_saveasnew"] {
+        background: #0d9488 !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 13.5px !important;
+        padding: 10px 20px !important;
+        border-radius: 6px !important;
+        border: none !important;
+        cursor: pointer !important;
+    }
+
+    .submit-row input[name="_continue"],
+    .submit-row input[name="_addanother"] {
+        background: #f8fafc !important;
+        color: #0f172a !important;
+        border: 1.5px solid #cbd5e1 !important;
+        font-weight: 600 !important;
+        font-size: 13px !important;
+        padding: 9px 18px !important;
+        border-radius: 6px !important;
+        cursor: pointer !important;
+    }
+
+    .submit-row input[name="_continue"]:hover,
+    .submit-row input[name="_addanother"]:hover {
+        background: #f1f5f9 !important;
+        border-color: #94a3b8 !important;
+    }
+
+    .submit-row a.deletelink {
+        background: #fee2e2 !important;
+        color: #b91c1c !important;
+        border: 1.5px solid #fca5a5 !important;
+        font-weight: 600 !important;
+        padding: 9px 16px !important;
+        border-radius: 6px !important;
+        text-decoration: none !important;
+    }
+
+    /* 10. Changelist Table Headers & Rows */
+    #changelist table thead th {
+        background: #1e293b !important;
+        color: #ffffff !important;
+        font-weight: 600 !important;
+        font-size: 12.5px !important;
+        padding: 11px 14px !important;
+        border-bottom: 2px solid #0f172a !important;
+    }
+
+    #changelist table thead th a {
+        color: #ffffff !important;
+    }
+
+    #changelist table tbody tr {
+        border-bottom: 1px solid #e2e8f0 !important;
+    }
+
+    #changelist table tbody tr:hover {
+        background: #f1f5f9 !important;
+    }
+
+    #changelist table tbody td {
+        color: #0f172a !important;
+        padding: 11px 14px !important;
+        font-size: 13px !important;
+    }
+  </style>
+{% endblock %}

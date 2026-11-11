@@ -446,3 +446,4 @@ export const AccessoryCard = ({ product }: { product: AccessoryItem }) => {
 3. **Empty Filter Handling:** If a filter category (e.g. `ml` or `valve_types`) has 0 items in the catalog, either collapse or hide its accordion section.
 4. **Active Filter Tags:** Render dismissible pills at the top of the product grid for each active filter (e.g. `[12 Speed ✕]`, `[Shimano ✕]`, `[₹1000 - ₹5000 ✕]`) with a "Clear All" button.
 5. **Pagination Reset:** Ensure changing any filter resets current page to `page=1`.
+

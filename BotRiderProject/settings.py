@@ -77,7 +77,7 @@ ROOT_URLCONF = 'BotRiderProject.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -337,7 +337,7 @@ JET_THEMES = [
 ]
 JET_CHANGE_FORM_SIBLING_LINKS = True
 # JET_COMPACT_SIDENAV = True
-# JET_DEFAULT_THEME = 'default'
+JET_DEFAULT_THEME = 'light-gray'
 # JET_SIDE_MENU_COMPACT = True
 
 JET_INDEX_DASHBOARD = 'jet.dashboard.dashboard.DefaultIndexDashboard'

@@ -1,0 +1,154 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+<div id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a></div>
+{% endblock %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" type="text/css" href="{% static 'admin/css/admin_enhanced_contrast.css' %}">
+  <style>
+    /* Critical inline styles to ensure immediate high contrast rendering */
+    .changeform-tabs {
+        background: #f1f5f9 !important;
+        border: 1.5px solid #cbd5e1 !important;
+        border-radius: 8px 8px 0 0 !important;
+        padding: 8px 10px !important;
+        margin-bottom: 0 !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+    .changeform-tabs-item-link {
+        color: #334155 !important;
+        background: #e2e8f0 !important;
+        font-weight: 600 !important;
+        font-size: 12px !important;
+        padding: 8px 16px !important;
+        border-radius: 6px !important;
+        text-transform: uppercase !important;
+        display: inline-block !important;
+        text-decoration: none !important;
+        letter-spacing: 0.03em !important;
+    }
+    .changeform-tabs-item:hover .changeform-tabs-item-link {
+        background: #cbd5e1 !important;
+        color: #0f172a !important;
+    }
+    .changeform-tabs-item.selected .changeform-tabs-item-link {
+        background: #2563eb !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.35) !important;
+    }
+    .change-form fieldset.module.aligned,
+    .change-form .module {
+        background: #ffffff !important;
+        border: 1.5px solid #cbd5e1 !important;
+        border-top: none !important;
+        border-radius: 0 0 8px 8px !important;
+        padding: 20px 24px !important;
+        box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.05) !important;
+        margin-bottom: 24px !important;
+    }
+    .change-form input[type="text"],
+    .change-form input[type="password"],
+    .change-form input[type="email"],
+    .change-form input[type="url"],
+    .change-form input[type="number"],
+    .change-form input[type="tel"],
+    .change-form textarea,
+    .change-form select {
+        border: 1.5px solid #94a3b8 !important;
+        background-color: #ffffff !important;
+        color: #0f172a !important;
+        font-size: 13.5px !important;
+        padding: 8px 12px !important;
+        border-radius: 6px !important;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
+        box-sizing: border-box !important;
+    }
+    .change-form input:hover,
+    .change-form textarea:hover,
+    .change-form select:hover {
+        border-color: #475569 !important;
+    }
+    .change-form input:focus,
+    .change-form textarea:focus,
+    .change-form select:focus {
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.18) !important;
+        outline: none !important;
+    }
+    .change-form .form-row label,
+    .change-form .form-row > div > label {
+        color: #0f172a !important;
+        font-weight: 600 !important;
+        font-size: 13px !important;
+        margin-bottom: 4px !important;
+    }
+    .change-form .form-row .help,
+    .change-form .help {
+        color: #475569 !important;
+        font-size: 12px !important;
+        font-weight: 500 !important;
+        margin-top: 5px !important;
+        line-height: 1.45 !important;
+    }
+    .change-form .module .description,
+    .change-form fieldset .description {
+        background: #f0fdf4 !important;
+        border: 1px solid #86efac !important;
+        border-left: 4px solid #16a34a !important;
+        color: #14532d !important;
+        padding: 10px 14px !important;
+        border-radius: 6px !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        margin: 10px 0 16px 0 !important;
+    }
+    .change-form .form-row {
+        border-bottom: 1px solid #f1f5f9 !important;
+        padding: 12px 6px !important;
+    }
+    .change-form .form-row:hover {
+        background-color: #fafbfc !important;
+    }
+    .breadcrumbs {
+        background: #f8fafc !important;
+        border: 1.5px solid #cbd5e1 !important;
+        border-radius: 6px !important;
+        padding: 10px 16px !important;
+        color: #334155 !important;
+        margin-bottom: 18px !important;
+    }
+    .breadcrumbs a {
+        color: #2563eb !important;
+        font-weight: 600 !important;
+        text-decoration: none !important;
+    }
+    .submit-row {
+        background: #f8fafc !important;
+        border: 1.5px solid #cbd5e1 !important;
+        border-radius: 8px !important;
+        padding: 14px 20px !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04) !important;
+    }
+    .submit-row input[type="submit"].default {
+        background: #2563eb !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        border: none !important;
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3) !important;
+    }
+    .submit-row input[name="_saveasnew"] {
+        background: #0d9488 !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        border: none !important;
+    }
+  </style>
+{% endblock %}

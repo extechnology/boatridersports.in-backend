@@ -1,0 +1,430 @@
+/* ==========================================================================
+   Django Admin & Jet UI Enhanced High-Contrast Theme
+   Fixes mild/washed-out inputs, pale tabs, faint labels, and low-contrast borders.
+   ========================================================================== */
+
+/* -------------------- 1. Form Inputs & Selects -------------------- */
+.change-form input[type="text"],
+.change-form input[type="password"],
+.change-form input[type="email"],
+.change-form input[type="url"],
+.change-form input[type="number"],
+.change-form input[type="tel"],
+.change-form textarea,
+.change-form select,
+.change-form .select2-container .select2-choice,
+#changelist input[type="text"],
+#changelist select {
+    border: 1.5px solid #94a3b8 !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 13.5px !important;
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+    box-sizing: border-box !important;
+}
+
+.change-form input[type="text"]:hover,
+.change-form input[type="password"]:hover,
+.change-form input[type="email"]:hover,
+.change-form input[type="url"]:hover,
+.change-form input[type="number"]:hover,
+.change-form textarea:hover,
+.change-form select:hover {
+    border-color: #475569 !important;
+}
+
+.change-form input[type="text"]:focus,
+.change-form input[type="password"]:focus,
+.change-form input[type="email"]:focus,
+.change-form input[type="url"]:focus,
+.change-form input[type="number"]:focus,
+.change-form textarea:focus,
+.change-form select:focus,
+.change-form .select2-container-active .select2-choice {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.18) !important;
+    outline: none !important;
+}
+
+/* -------------------- 2. Field Labels -------------------- */
+.change-form .form-row label,
+.change-form .form-row > div > label,
+.change-form .form-row > label {
+    color: #0f172a !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    letter-spacing: 0.01em !important;
+    margin-bottom: 5px !important;
+    display: inline-block !important;
+}
+
+/* Required field indicator */
+.change-form .form-row.required label:after,
+.change-form label.required:after {
+    content: " *" !important;
+    color: #dc2626 !important;
+    font-weight: bold !important;
+}
+
+/* -------------------- 3. Help Text & Descriptions -------------------- */
+.change-form .form-row .help,
+.change-form .help,
+.change-form .help-block,
+.change-form p.help {
+    color: #475569 !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    margin-top: 5px !important;
+    margin-bottom: 2px !important;
+    line-height: 1.45 !important;
+    display: block !important;
+}
+
+.change-form .module .description,
+.change-form fieldset .description {
+    background: #f0fdf4 !important;
+    border: 1px solid #86efac !important;
+    border-left: 4px solid #16a34a !important;
+    color: #14532d !important;
+    padding: 10px 14px !important;
+    border-radius: 6px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    margin: 10px 0 16px 0 !important;
+    line-height: 1.5 !important;
+}
+
+/* -------------------- 4. Changeform Tabs -------------------- */
+.changeform-tabs {
+    background: #f1f5f9 !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 8px 8px 0 0 !important;
+    padding: 8px 10px !important;
+    margin-bottom: 0 !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+
+.changeform-tabs-item {
+    margin: 0 !important;
+    float: none !important;
+    display: inline-block !important;
+}
+
+.changeform-tabs-item-link {
+    color: #334155 !important;
+    background: #e2e8f0 !important;
+    font-weight: 600 !important;
+    font-size: 12px !important;
+    padding: 8px 16px !important;
+    border-radius: 6px !important;
+    text-decoration: none !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+    transition: all 0.15s ease !important;
+    display: inline-block !important;
+    border: 1px solid transparent !important;
+}
+
+.changeform-tabs-item:hover .changeform-tabs-item-link {
+    background: #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+.changeform-tabs-item.selected .changeform-tabs-item-link {
+    background: #2563eb !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border-color: #1d4ed8 !important;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.35) !important;
+}
+
+.changeform-tabs-item.errors .changeform-tabs-item-link {
+    background: #fee2e2 !important;
+    color: #b91c1c !important;
+    border-color: #fca5a5 !important;
+}
+
+/* -------------------- 5. Fieldset & Module Containers -------------------- */
+.change-form fieldset.module.aligned,
+.change-form .module {
+    background: #ffffff !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-top: none !important;
+    border-radius: 0 0 8px 8px !important;
+    padding: 20px 24px !important;
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.05) !important;
+    margin-bottom: 24px !important;
+}
+
+.change-form fieldset.module h2 {
+    color: #0f172a !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.03em !important;
+    padding: 10px 14px !important;
+    background: #f8fafc !important;
+    border-bottom: 1.5px solid #e2e8f0 !important;
+    margin: -20px -24px 16px -24px !important;
+}
+
+/* Form row division & hover */
+.change-form .form-row {
+    border-bottom: 1px solid #f1f5f9 !important;
+    padding: 12px 6px !important;
+    transition: background-color 0.15s ease !important;
+}
+
+.change-form .form-row:hover {
+    background-color: #fafbfc !important;
+}
+
+.change-form .form-row:last-child {
+    border-bottom: none !important;
+}
+
+/* -------------------- 6. Breadcrumbs Navigation -------------------- */
+.breadcrumbs {
+    background: #f8fafc !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    padding: 10px 16px !important;
+    font-size: 12.5px !important;
+    color: #475569 !important;
+    margin-bottom: 18px !important;
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+}
+
+.breadcrumbs a {
+    color: #2563eb !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+}
+
+.breadcrumbs a:hover {
+    text-decoration: underline !important;
+    color: #1d4ed8 !important;
+}
+
+/* -------------------- 7. Top Object Tools Bar -------------------- */
+.object-tools {
+    margin-top: 0 !important;
+    margin-bottom: 16px !important;
+    display: flex !important;
+    gap: 8px !important;
+}
+
+.object-tools li {
+    list-style: none !important;
+}
+
+.object-tools a.historylink {
+    background: #f1f5f9 !important;
+    color: #334155 !important;
+    border: 1.5px solid #cbd5e1 !important;
+    font-weight: 600 !important;
+    padding: 6px 14px !important;
+    border-radius: 6px !important;
+    text-decoration: none !important;
+    transition: all 0.15s ease !important;
+}
+
+.object-tools a.historylink:hover {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+    border-color: #94a3b8 !important;
+}
+
+/* -------------------- 8. Submit Row (Bottom Action Bar) -------------------- */
+.submit-row {
+    background: #f8fafc !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    padding: 14px 20px !important;
+    margin-top: 24px !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+    align-items: center !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04) !important;
+}
+
+.submit-row input[type="submit"].default,
+.button.default {
+    background: #2563eb !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    font-size: 13.5px !important;
+    padding: 9px 24px !important;
+    border-radius: 6px !important;
+    border: none !important;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3) !important;
+    cursor: pointer !important;
+    transition: background 0.15s ease !important;
+}
+
+.submit-row input[type="submit"].default:hover,
+.button.default:hover {
+    background: #1d4ed8 !important;
+}
+
+.submit-row input[name="_saveasnew"] {
+    background: #0d9488 !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    font-size: 13.5px !important;
+    padding: 9px 20px !important;
+    border-radius: 6px !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: background 0.15s ease !important;
+}
+
+.submit-row input[name="_saveasnew"]:hover {
+    background: #0f766e !important;
+}
+
+.submit-row input[name="_continue"],
+.submit-row input[name="_addanother"] {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border: 1.5px solid #cbd5e1 !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    padding: 8px 18px !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+}
+
+.submit-row input[name="_continue"]:hover,
+.submit-row input[name="_addanother"]:hover {
+    background: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+}
+
+.submit-row a.deletelink {
+    background: #fee2e2 !important;
+    color: #b91c1c !important;
+    border: 1.5px solid #fca5a5 !important;
+    font-weight: 600 !important;
+    padding: 8px 16px !important;
+    border-radius: 6px !important;
+    text-decoration: none !important;
+    transition: all 0.15s ease !important;
+}
+
+.submit-row a.deletelink:hover {
+    background: #fecaca !important;
+}
+
+/* -------------------- 9. Inlines & Tabular Tables -------------------- */
+.inline-group {
+    background: #ffffff !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    padding: 16px !important;
+    margin-bottom: 24px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04) !important;
+}
+
+.inline-group h2 {
+    color: #0f172a !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.03em !important;
+    padding: 8px 12px !important;
+    background: #f8fafc !important;
+    border-bottom: 1.5px solid #e2e8f0 !important;
+    margin: -16px -16px 16px -16px !important;
+    border-radius: 6px 6px 0 0 !important;
+}
+
+.tabular table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+}
+
+.tabular table thead th {
+    background: #1e293b !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    font-size: 12px !important;
+    padding: 9px 12px !important;
+    border-bottom: 2px solid #0f172a !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.03em !important;
+}
+
+.tabular table tbody td {
+    padding: 10px 12px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    color: #1e293b !important;
+    font-size: 13px !important;
+}
+
+.tabular table tbody tr:hover {
+    background-color: #f8fafc !important;
+}
+
+/* -------------------- 10. Changelist (List View) -------------------- */
+#changelist table thead th {
+    background: #1e293b !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    font-size: 12.5px !important;
+    padding: 10px 14px !important;
+    border-bottom: 2px solid #0f172a !important;
+}
+
+#changelist table thead th a {
+    color: #ffffff !important;
+}
+
+#changelist table tbody tr {
+    border-bottom: 1px solid #e2e8f0 !important;
+    transition: background 0.15s ease !important;
+}
+
+#changelist table tbody tr:hover {
+    background: #f8fafc !important;
+}
+
+#changelist table tbody td {
+    color: #1e293b !important;
+    padding: 10px 14px !important;
+    font-size: 13px !important;
+}
+
+#changelist-filter {
+    background: #f8fafc !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    padding: 12px !important;
+}
+
+#changelist-filter h2 {
+    background: #1e293b !important;
+    color: #ffffff !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    text-transform: uppercase !important;
+    margin-bottom: 10px !important;
+}
+
+#changelist-filter li.selected a {
+    color: #2563eb !important;
+    font-weight: 700 !important;
+}
