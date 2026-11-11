@@ -170,3 +170,4 @@ def clone_accessory(original_accessory, new_name=None):
 
         logger.info(f"Successfully duplicated Accessory {original_accessory.id} ({original_accessory.name}) to {new_acc.id} ({new_acc.name})")
         return new_acc
+
