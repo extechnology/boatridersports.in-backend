@@ -11,7 +11,8 @@ from .product_serializers import *
 from .product_models import *
 
 from .product_filters import bike_filters,accessories_filters
-from django.db.models import Prefetch,Subquery
+from django.db.models import Prefetch, Subquery
+from django.db import models
 
 from django_filters.rest_framework import DjangoFilterBackend
 from .product_filters import (
@@ -74,19 +75,85 @@ class ProductsFilterSideBarAPIView(APIView):
             return Response(data)
             
         elif sidebar == "accessories":
+            acc_qs = AccessoriesModel.objects.all()
+
+            price_agg = acc_qs.aggregate(
+                min_price=models.Min('price'),
+                max_price=models.Max('price')
+            )
+            min_p = float(price_agg["min_price"]) if price_agg["min_price"] is not None else 0.0
+            max_p = float(price_agg["max_price"]) if price_agg["max_price"] is not None else 0.0
+
             data = {
+                "product_type": "accessories",
+                "brands": list(
+                    BikeBrandModel.objects.filter(accessories__isnull=False)
+                    .values_list("brand_name", flat=True).distinct().order_by("brand_name")
+                ) or list(BikeBrandModel.objects.values_list("brand_name", flat=True).distinct().order_by("brand_name")),
                 "categories": list(
-                    AccessoriesCategoryModel.objects.values_list("name", flat=True)
+                    AccessoriesCategoryModel.objects.values_list("name", flat=True).distinct().order_by("name")
                 ),
                 "sub_categories": list(
-                    AccessoriesSubCategoryModel.objects.values_list("name", flat=True)
+                    AccessoriesSubCategoryModel.objects.values_list("name", flat=True).distinct().order_by("name")
                 ),
-                "brands": list(
-                    BikeBrandModel.objects.values_list("brand_name", flat=True)
+                "model_numbers": list(
+                    acc_qs.exclude(model_no__isnull=True).exclude(model_no="")
+                    .values_list("model_no", flat=True).distinct().order_by("model_no")
                 ),
-                "product_type": "accessories",  
+                "model_names": list(
+                    acc_qs.exclude(model_name__isnull=True).exclude(model_name="")
+                    .values_list("model_name", flat=True).distinct().order_by("model_name")
+                ),
+                "speeds": list(
+                    acc_qs.exclude(speed__isnull=True).exclude(speed="")
+                    .values_list("speed", flat=True).distinct().order_by("speed")
+                ),
+                "tire_types": list(
+                    acc_qs.exclude(tire_type__isnull=True).exclude(tire_type="")
+                    .values_list("tire_type", flat=True).distinct().order_by("tire_type")
+                ),
+                "hub_widths": list(
+                    acc_qs.exclude(hub_width__isnull=True).exclude(hub_width="")
+                    .values_list("hub_width", flat=True).distinct().order_by("hub_width")
+                ),
+                "valve_types": list(
+                    acc_qs.exclude(valve_type__isnull=True).exclude(valve_type="")
+                    .values_list("valve_type", flat=True).distinct().order_by("valve_type")
+                ),
+                "sizes": list(
+                    acc_qs.exclude(size__isnull=True).exclude(size="")
+                    .values_list("size", flat=True).distinct().order_by("size")
+                ),
+                "ml": list(
+                    acc_qs.exclude(ml__isnull=True).exclude(ml="")
+                    .values_list("ml", flat=True).distinct().order_by("ml")
+                ),
+                "colors": list(
+                    acc_qs.exclude(color__isnull=True).exclude(color="")
+                    .values_list("color", flat=True).distinct().order_by("color")
+                ),
+                "bike_mounted_types": list(
+                    acc_qs.exclude(bike_mounted_type__isnull=True).exclude(bike_mounted_type="")
+                    .values_list("bike_mounted_type", flat=True).distinct().order_by("bike_mounted_type")
+                ),
+                "materials": list(
+                    acc_qs.exclude(material__isnull=True).exclude(material="")
+                    .values_list("material", flat=True).distinct().order_by("material")
+                ),
+                "warranties": list(
+                    acc_qs.exclude(warranty__isnull=True).exclude(warranty="")
+                    .values_list("warranty", flat=True).distinct().order_by("warranty")
+                ),
+                "price_range": {
+                    "min_price": min_p,
+                    "max_price": max_p
+                },
+                "mrp_range": {
+                    "min_price": min_p,
+                    "max_price": max_p
+                },
                 "special_tags": list(
-                    SpecialTagModel.objects.values_list("tag_name", flat=True)
+                    SpecialTagModel.objects.values_list("tag_name", flat=True).distinct().order_by("tag_name")
                 )
             }
             return Response(data)

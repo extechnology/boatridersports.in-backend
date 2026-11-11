@@ -313,13 +313,55 @@ class AccessoryImagesInline(PreserveFilesAdminMixin, admin.TabularInline):
 
 @admin.register(AccessoriesModel)
 class AccessoriesAdmin(PreserveFilesAdminMixin, admin.ModelAdmin):
-    list_display = ('name', 'created')
-    search_fields = ('name','brand')
-    list_filter = ('name','brand')
+    list_display = ('name', 'model_name', 'model_no', 'brand', 'sub_category', 'price', 'is_available', 'is_out_of_stock', 'created')
+    search_fields = ('name', 'model_name', 'model_no', 'brand__brand_name', 'sub_category__name', 'sub_category__category__name')
+    list_filter = ('brand', 'sub_category__category', 'sub_category', 'speed', 'tire_type', 'valve_type', 'is_available', 'is_out_of_stock')
     inlines = [AccessoryImagesInline]
 
     save_as = True
     actions = ['duplicate_accessory']
+
+    fieldsets = (
+        ('Basic Information', {
+            'fields': (
+                'name',
+                'model_name',
+                'model_no',
+                'brand',
+                'sub_category',
+                'special_tag',
+                'description',
+            )
+        }),
+        ('Filter Specifications (Optional)', {
+            'description': 'Fill in only the filter specifications relevant to this spare or accessory. Leave blank if not applicable.',
+            'fields': (
+                ('speed', 'tire_type'),
+                ('hub_width', 'valve_type'),
+                ('size', 'ml'),
+                ('color', 'material'),
+                ('bike_mounted_type', 'warranty'),
+            )
+        }),
+        ('Pricing & Stock', {
+            'fields': (
+                'price',
+                'stock',
+                'is_available',
+                'is_out_of_stock',
+                'is_discount',
+                'discount_price',
+                'discount_percentage',
+            )
+        }),
+        ('Display & Settings', {
+            'fields': (
+                'is_dark',
+                'online_purchase_enabled',
+                'shipping_charge',
+            )
+        }),
+    )
 
     @admin.action(description="Duplicate selected accessories (creates a copy with all images)")
     def duplicate_accessory(self, request, queryset):

@@ -323,7 +323,7 @@ class AccessoryImagesSerializer(serializers.ModelSerializer):
 
 
 class AccessoriesSerializer(serializers.ModelSerializer):
-    sub_category = serializers.CharField(source='sub_category.category.name', read_only=True)
+    sub_category = serializers.CharField(source='sub_category.name', read_only=True)
     accessory_images = AccessoryImagesSerializer(many=True, read_only=True)
     special_tag = serializers.CharField(source='special_tag.tag_name', read_only=True)
     brand = serializers.CharField(source='brand.brand_name', read_only=True)
@@ -336,11 +336,23 @@ class AccessoriesSerializer(serializers.ModelSerializer):
             'id',
             'unique_id',
             'name',
+            'model_name',
+            'model_no',
             'category',
-            'description',
-
-            'special_tag',
+            'sub_category',
             'brand',
+            'description',
+            'special_tag',
+            'speed',
+            'tire_type',
+            'hub_width',
+            'valve_type',
+            'size',
+            'ml',
+            'color',
+            'bike_mounted_type',
+            'material',
+            'warranty',
             'price',
             'stock',
             'is_available',
@@ -348,7 +360,6 @@ class AccessoriesSerializer(serializers.ModelSerializer):
             'is_discount',
             'discount_price',
             'discount_percentage', 
-            'sub_category', 
             'accessory_images',
             'is_dark',
             'online_purchase_enabled',

@@ -116,57 +116,175 @@ class BikeFilter(filters.FilterSet):
 
 class AccessoriesFilter(filters.FilterSet):
 
-    # 🔹 Price filters
-    min_price = filters.NumberFilter(field_name="price", lookup_expr="gte")
-    max_price = filters.NumberFilter(field_name="price", lookup_expr="lte")
+    # 🔹 Price filters (considering discount_price if active)
+    min_price = filters.NumberFilter(method="filter_min_price")
+    max_price = filters.NumberFilter(method="filter_max_price")
 
-    min_discount_price = filters.NumberFilter(
-        field_name="discount_price", lookup_expr="gte"
-    )
-    max_discount_price = filters.NumberFilter(
-        field_name="discount_price", lookup_expr="lte"
-    )
+    def filter_min_price(self, queryset, name, value):
+        return queryset.filter(
+            Q(is_discount=True, discount_price__gte=value) |
+            Q(is_discount=False, price__gte=value)
+        )
+
+    def filter_max_price(self, queryset, name, value):
+        return queryset.filter(
+            Q(is_discount=True, discount_price__lte=value) |
+            Q(is_discount=False, price__lte=value)
+        )
 
     # 🔹 Text search
-    name = filters.CharFilter(
-        field_name="name",
-        lookup_expr="icontains"
-    )
+    name = filters.CharFilter(method="filter_search_name")
+    def filter_search_name(self, queryset, name, value):
+        return queryset.filter(
+            Q(name__icontains=value) |
+            Q(model_name__icontains=value) |
+            Q(model_no__icontains=value)
+        )
 
     description = filters.CharFilter(
         field_name="description",
         lookup_expr="icontains"
     )
 
-    # 🔹 Category filters (FK → FK)
-    category = filters.CharFilter(
-        field_name="sub_category__category__name",
-        lookup_expr="icontains"
-    )
+    # 🔹 Category / Sub Category / Brand filters (support getlist multi-select)
+    category = filters.CharFilter(method="filter_category")
+    sub_category = filters.CharFilter(method="filter_sub_category")
+    brand = filters.CharFilter(method="filter_brand")
+    special_tag = filters.CharFilter(method="filter_special_tag")
 
-    sub_category = filters.CharFilter(
-        field_name="sub_category__name",
-        lookup_expr="icontains"
-    )
+    def filter_category(self, queryset, name, value):
+        categories = self.request.GET.getlist("category") if self.request else []
+        if categories:
+            return queryset.filter(sub_category__category__name__in=categories)
+        return queryset.filter(sub_category__category__name__icontains=value)
 
-    # 🔹 Brand filter (ManyToMany)
-    brand = filters.CharFilter(
-        field_name="brand__brand_name",
-        lookup_expr="icontains"
-    )
+    def filter_sub_category(self, queryset, name, value):
+        sub_categories = self.request.GET.getlist("sub_category") if self.request else []
+        if sub_categories:
+            return queryset.filter(sub_category__name__in=sub_categories)
+        return queryset.filter(sub_category__name__icontains=value)
+
+    def filter_brand(self, queryset, name, value):
+        brands = self.request.GET.getlist("brand") if self.request else []
+        if brands:
+            return queryset.filter(brand__brand_name__in=brands)
+        return queryset.filter(brand__brand_name__icontains=value)
+
+    def filter_special_tag(self, queryset, name, value):
+        tags = self.request.GET.getlist("special_tag") if self.request else []
+        if tags:
+            return queryset.filter(special_tag__tag_name__in=tags)
+        return queryset.filter(special_tag__tag_name__icontains=value)
+
+    # 🔹 Specification Filter Attributes
+    model_no = filters.CharFilter(method="filter_model_no")
+    model_name = filters.CharFilter(method="filter_model_name")
+    speed = filters.CharFilter(method="filter_speed")
+    tire_type = filters.CharFilter(method="filter_tire_type")
+    hub_width = filters.CharFilter(method="filter_hub_width")
+    valve_type = filters.CharFilter(method="filter_valve_type")
+    size = filters.CharFilter(method="filter_size")
+    ml = filters.CharFilter(method="filter_ml")
+    color = filters.CharFilter(method="filter_color")
+    bike_mounted_type = filters.CharFilter(method="filter_bike_mounted_type")
+    material = filters.CharFilter(method="filter_material")
+    warranty = filters.CharFilter(method="filter_warranty")
+
+    def filter_model_no(self, queryset, name, value):
+        vals = self.request.GET.getlist("model_no") if self.request else []
+        if vals:
+            return queryset.filter(model_no__in=vals)
+        return queryset.filter(model_no__icontains=value)
+
+    def filter_model_name(self, queryset, name, value):
+        vals = self.request.GET.getlist("model_name") if self.request else []
+        if vals:
+            return queryset.filter(model_name__in=vals)
+        return queryset.filter(model_name__icontains=value)
+
+    def filter_speed(self, queryset, name, value):
+        vals = self.request.GET.getlist("speed") if self.request else []
+        if vals:
+            return queryset.filter(speed__in=vals)
+        return queryset.filter(speed__icontains=value)
+
+    def filter_tire_type(self, queryset, name, value):
+        vals = self.request.GET.getlist("tire_type") if self.request else []
+        if vals:
+            return queryset.filter(tire_type__in=vals)
+        return queryset.filter(tire_type__icontains=value)
+
+    def filter_hub_width(self, queryset, name, value):
+        vals = self.request.GET.getlist("hub_width") if self.request else []
+        if vals:
+            return queryset.filter(hub_width__in=vals)
+        return queryset.filter(hub_width__icontains=value)
+
+    def filter_valve_type(self, queryset, name, value):
+        vals = self.request.GET.getlist("valve_type") if self.request else []
+        if vals:
+            return queryset.filter(valve_type__in=vals)
+        return queryset.filter(valve_type__icontains=value)
+
+    def filter_size(self, queryset, name, value):
+        vals = self.request.GET.getlist("size") if self.request else []
+        if vals:
+            return queryset.filter(size__in=vals)
+        return queryset.filter(size__icontains=value)
+
+    def filter_ml(self, queryset, name, value):
+        vals = self.request.GET.getlist("ml") if self.request else []
+        if vals:
+            return queryset.filter(ml__in=vals)
+        return queryset.filter(ml__icontains=value)
+
+    def filter_color(self, queryset, name, value):
+        vals = self.request.GET.getlist("color") if self.request else []
+        if vals:
+            return queryset.filter(color__in=vals)
+        return queryset.filter(color__icontains=value)
+
+    def filter_bike_mounted_type(self, queryset, name, value):
+        vals = self.request.GET.getlist("bike_mounted_type") if self.request else []
+        if vals:
+            return queryset.filter(bike_mounted_type__in=vals)
+        return queryset.filter(bike_mounted_type__icontains=value)
+
+    def filter_material(self, queryset, name, value):
+        vals = self.request.GET.getlist("material") if self.request else []
+        if vals:
+            return queryset.filter(material__in=vals)
+        return queryset.filter(material__icontains=value)
+
+    def filter_warranty(self, queryset, name, value):
+        vals = self.request.GET.getlist("warranty") if self.request else []
+        if vals:
+            return queryset.filter(warranty__in=vals)
+        return queryset.filter(warranty__icontains=value)
 
     class Meta:
         model = AccessoriesModel
         fields = [
             "name",
+            "model_name",
+            "model_no",
             "description",
             "category",
             "sub_category",
             "brand",
+            "speed",
+            "tire_type",
+            "hub_width",
+            "valve_type",
+            "size",
+            "ml",
+            "color",
+            "bike_mounted_type",
+            "material",
+            "warranty",
+            "special_tag",
             "min_price",
             "max_price",
-            "min_discount_price",
-            "max_discount_price",
         ]
 
 
@@ -240,37 +358,97 @@ def accessories_filters(request):
     brand = request.GET.getlist('brand')
     category = request.GET.getlist('category')
     sub_category = request.GET.getlist('sub_category')
-    min_price = request.GET.get('min_price')
-    max_price = request.GET.get('max_price')
     special_tag = request.GET.getlist('special_tag')
 
-    queryset = AccessoriesModel.objects.all()
+    # Specification Filter Attributes
+    model_no = request.GET.getlist('model_no') or ([request.GET.get('model_no')] if request.GET.get('model_no') else [])
+    model_name = request.GET.getlist('model_name') or ([request.GET.get('model_name')] if request.GET.get('model_name') else [])
+    speed = request.GET.getlist('speed')
+    tire_type = request.GET.getlist('tire_type')
+    hub_width = request.GET.getlist('hub_width')
+    valve_type = request.GET.getlist('valve_type')
+    size = request.GET.getlist('size')
+    ml = request.GET.getlist('ml')
+    color = request.GET.getlist('color')
+    bike_mounted_type = request.GET.getlist('bike_mounted_type')
+    material = request.GET.getlist('material')
+    warranty = request.GET.getlist('warranty')
+
+    min_price = request.GET.get('min_price')
+    max_price = request.GET.get('max_price')
+
+    queryset = AccessoriesModel.objects.all().order_by('-created')
 
     if name:
-        queryset = queryset.filter(name__icontains=name)
+        queryset = queryset.filter(
+            Q(name__icontains=name) |
+            Q(model_name__icontains=name) |
+            Q(model_no__icontains=name) |
+            Q(description__icontains=name)
+        )
 
     if brand:
         queryset = queryset.filter(brand__brand_name__in=brand)
 
-    # ✅ FIX: go through sub_category → category → name
     if category:
         queryset = queryset.filter(
             sub_category__category__name__in=category
         )
 
-    # ✅ FIX: correct field name
     if sub_category:
         queryset = queryset.filter(
             sub_category__name__in=sub_category
         )
 
+    if model_no:
+        queryset = queryset.filter(model_no__in=model_no)
+
+    if model_name:
+        queryset = queryset.filter(model_name__in=model_name)
+
+    if speed:
+        queryset = queryset.filter(speed__in=speed)
+
+    if tire_type:
+        queryset = queryset.filter(tire_type__in=tire_type)
+
+    if hub_width:
+        queryset = queryset.filter(hub_width__in=hub_width)
+
+    if valve_type:
+        queryset = queryset.filter(valve_type__in=valve_type)
+
+    if size:
+        queryset = queryset.filter(size__in=size)
+
+    if ml:
+        queryset = queryset.filter(ml__in=ml)
+
+    if color:
+        queryset = queryset.filter(color__in=color)
+
+    if bike_mounted_type:
+        queryset = queryset.filter(bike_mounted_type__in=bike_mounted_type)
+
+    if material:
+        queryset = queryset.filter(material__in=material)
+
+    if warranty:
+        queryset = queryset.filter(warranty__in=warranty)
+
     if special_tag:
         queryset = queryset.filter(special_tag__tag_name__in=special_tag)
 
     if min_price:
-        queryset = queryset.filter(price__gte=min_price)
+        queryset = queryset.filter(
+            Q(is_discount=True, discount_price__gte=min_price) |
+            Q(is_discount=False, price__gte=min_price)
+        )
 
     if max_price:
-        queryset = queryset.filter(price__lte=max_price)
+        queryset = queryset.filter(
+            Q(is_discount=True, discount_price__lte=max_price) |
+            Q(is_discount=False, price__lte=max_price)
+        )
 
     return queryset

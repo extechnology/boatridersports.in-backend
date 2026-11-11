@@ -140,13 +140,25 @@ class AccessorySerializer(serializers.ModelSerializer):
         model = AccessoriesModel
         fields = [
             'name',
+            'model_name',
+            'model_no',
             'description',
             'price',
             'stock',
             'category',
             'sub_category',
-            'image_url',
             'brand',
+            'speed',
+            'tire_type',
+            'hub_width',
+            'valve_type',
+            'size',
+            'ml',
+            'color',
+            'bike_mounted_type',
+            'material',
+            'warranty',
+            'image_url',
         ]
     
     def get_image_url(self, instance):

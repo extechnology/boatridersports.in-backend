@@ -337,6 +337,8 @@ class AccessoriesSubCategoryModel(models.Model):
 class AccessoriesModel(models.Model):
     unique_id =  models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     name = models.CharField(max_length=255, help_text="Enter the name for the accessory")
+    model_name = models.CharField(max_length=255, null=True, blank=True, help_text="Enter the model name (e.g. Deore XT, GX Eagle)")
+    model_no = models.CharField(max_length=255, null=True, blank=True, help_text="Enter the model number (e.g. RD-M8100, CN-M7100)")
     description = models.TextField(help_text="Enter the description for the accessory")
 
     product_type = models.CharField(max_length=255,default = 'accessories',editable=False) 
@@ -345,6 +347,18 @@ class AccessoriesModel(models.Model):
     
     sub_category = models.ForeignKey(AccessoriesSubCategoryModel,on_delete=models.CASCADE,related_name='accessories')
     brand = models.ForeignKey(BikeBrandModel,related_name='accessories',on_delete=models.CASCADE,null=True,blank=True)
+
+    # Optional Filter / Specification Attributes
+    speed = models.CharField(max_length=100, null=True, blank=True, help_text="Enter speed (e.g. 12 Speed, 11 Speed, 10 Speed, Single Speed)")
+    tire_type = models.CharField(max_length=100, null=True, blank=True, help_text="Enter tire type (e.g. Tubeless Ready, Clincher, Tubular, Folding Bead)")
+    hub_width = models.CharField(max_length=100, null=True, blank=True, help_text="Enter hub width (e.g. 148mm Boost, 142mm, 135mm, 100mm, 110mm Boost)")
+    valve_type = models.CharField(max_length=100, null=True, blank=True, help_text="Enter valve type (e.g. Presta, Schrader, Dunlop)")
+    size = models.CharField(max_length=100, null=True, blank=True, help_text="Enter size (e.g. 29x2.40, 700x28c, M, L, XL, EU 42, 31.8mm)")
+    ml = models.CharField(max_length=100, null=True, blank=True, help_text="Enter volume / liquid quantity (e.g. 100ml, 120ml, 250ml, 500ml, 750ml, 1L)")
+    color = models.CharField(max_length=100, null=True, blank=True, help_text="Enter color (e.g. Black, Red, Silver, Matte Grey)")
+    bike_mounted_type = models.CharField(max_length=150, null=True, blank=True, help_text="Enter mounting type (e.g. Handlebar, Frame, Saddle, Seatpost, Fork, Direct Mount)")
+    material = models.CharField(max_length=150, null=True, blank=True, help_text="Enter material (e.g. Alloy, Carbon, Steel, Plastic, Silicone, Composite)")
+    warranty = models.CharField(max_length=100, null=True, blank=True, help_text="Enter warranty period (e.g. 6 Months, 1 Year, 2 Years, 3 Years, Lifetime)")
 
     price = models.DecimalField(max_digits=10, decimal_places=2,help_text="Enter the price for the accessory")
     stock = models.IntegerField(default=0)
@@ -358,6 +372,9 @@ class AccessoriesModel(models.Model):
     
     online_purchase_enabled = models.BooleanField(default=True)
     shipping_charge = models.DecimalField(max_digits=10, decimal_places=2,default=0)
+
+    class Meta:
+        ordering = ['-created']
 
     def __str__(self):
         return self.name
