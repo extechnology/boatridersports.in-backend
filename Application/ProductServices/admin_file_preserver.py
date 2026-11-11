@@ -224,7 +224,22 @@ class PreservedAdminFileWidget(AdminFileWidget):
             if preserved:
                 return preserved
 
-        # 4. Standard fallback (e.g. existing model instance or None)
+        # 4. "Save as new" support: carry over existing saved file to new instance
+        existing_file_path = data.get(f"{name}-existing-file")
+        if '_saveasnew' in data and not upload and not existing_token and existing_file_path:
+            if default_storage.exists(existing_file_path):
+                try:
+                    f = default_storage.open(existing_file_path)
+                    return PreservedUploadedFile(
+                        f,
+                        name=os.path.basename(existing_file_path),
+                        size=getattr(f, 'size', 0),
+                        temp_rel_path=None
+                    )
+                except Exception as e:
+                    logger.warning(f"Could not load existing file {existing_file_path} for save_as_new: {e}")
+
+        # 5. Standard fallback (e.g. existing model instance or None)
         return super().value_from_datadict(data, files, name)
 
     def render(self, name, value, attrs=None, renderer=None):
@@ -236,6 +251,14 @@ class PreservedAdminFileWidget(AdminFileWidget):
 
         # Standard widget render
         base_html = super().render(name, value, attrs=attrs, renderer=renderer)
+
+        existing_hidden = ''
+        if value and getattr(value, 'name', None):
+            existing_hidden = format_html(
+                '<input type="hidden" name="{}" value="{}">',
+                f"{name}-existing-file",
+                str(value.name)
+            )
 
         # Extra UI for preserved temp file
         if is_temp_preserved:
@@ -283,7 +306,7 @@ class PreservedAdminFileWidget(AdminFileWidget):
                 mark_safe(preview_thumbnail)
             )
 
-            return mark_safe(f"{notice_html}{hidden_input}{base_html}")
+            return mark_safe(f"{notice_html}{hidden_input}{existing_hidden}{base_html}")
 
         # If it's an existing saved image in DB (change mode), add a thumbnail preview above "Currently:"
         if self.is_image and value and getattr(value, 'url', None):
@@ -298,9 +321,9 @@ class PreservedAdminFileWidget(AdminFileWidget):
                 value.url,
                 value.url
             )
-            return mark_safe(f"{existing_thumb}{base_html}")
+            return mark_safe(f"{existing_hidden}{existing_thumb}{base_html}")
 
-        return base_html
+        return mark_safe(f"{existing_hidden}{base_html}")
 
 
 class PreservedAdminImageWidget(PreservedAdminFileWidget):
@@ -395,3 +418,4 @@ class PreserveFilesAdminMixin:
                         except Exception:
                             pass
                     delete_temp_file(token)
+

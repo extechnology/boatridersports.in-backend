@@ -1,8 +1,11 @@
 from Application.ProductServices.product_models import ShippingChargeModel
 import nested_admin
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.utils.html import format_html
+from django.urls import path, reverse
+from django.http import HttpResponseRedirect
 from .admin_file_preserver import PreserveFilesAdminMixin
+from .admin_duplicator import clone_bike, clone_accessory
 from .product_models import (
     BikeCategoryModel, BikeBrandModel, ColorModel, SizeModel, SpecialTagModel,
     BikeModel, BikeSizesModel, BikeColorsModel, BikeImagesModel,
@@ -161,6 +164,9 @@ class BikeAdmin(PreserveFilesAdminMixin, nested_admin.NestedModelAdmin):
     search_fields = ('name', 'brand__brand_name', 'category__category_name', 'price', 'discount_price', 'discount_percentage')
     list_filter = ('special_tag', 'brand', 'category', 'is_discount', 'is_available', 'is_out_of_stock', 'online_purchase_enabled')
 
+    save_as = True
+    actions = ['duplicate_bike']
+
     inlines = [
         BikeSizesModelNestedInline,
         BikeColorsModelNestedInline,
@@ -224,6 +230,72 @@ class BikeAdmin(PreserveFilesAdminMixin, nested_admin.NestedModelAdmin):
         return "-"
     brand_img.short_description = "Brand"
 
+    @admin.action(description="Duplicate selected bikes (creates a full copy with all inlines)")
+    def duplicate_bike(self, request, queryset):
+        duplicated = []
+        for bike in queryset:
+            cloned = clone_bike(bike)
+            duplicated.append(cloned)
+
+        if len(duplicated) == 1:
+            cloned = duplicated[0]
+            self.message_user(
+                request,
+                format_html(
+                    'Bike duplicated successfully as <strong>"{}"</strong>. You are now editing the duplicate. Update the name and any other fields, then click Save.',
+                    cloned.name
+                ),
+                level=messages.SUCCESS
+            )
+            return HttpResponseRedirect(reverse('admin:Application_bikemodel_change', args=[cloned.pk]))
+        else:
+            self.message_user(
+                request,
+                f"Successfully duplicated {len(duplicated)} bike(s). You can now edit each duplicate to change its name and details.",
+                level=messages.SUCCESS
+            )
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                '<path:object_id>/duplicate/',
+                self.admin_site.admin_view(self.duplicate_bike_view),
+                name='Application_bikemodel_duplicate',
+            ),
+        ]
+        return custom_urls + urls
+
+    def duplicate_bike_view(self, request, object_id):
+        obj = self.get_object(request, object_id)
+        if obj is None:
+            self.message_user(request, "Bike not found.", level=messages.ERROR)
+            return HttpResponseRedirect(reverse('admin:Application_bikemodel_changelist'))
+
+        if not self.has_add_permission(request):
+            self.message_user(request, "You do not have permission to duplicate bikes.", level=messages.ERROR)
+            return HttpResponseRedirect(reverse('admin:Application_bikemodel_change', args=[object_id]))
+
+        cloned = clone_bike(obj)
+        self.message_user(
+            request,
+            format_html(
+                'Bike duplicated successfully as <strong>"{}"</strong>. You are now editing the duplicate. Update the name and any other fields, then click Save.',
+                cloned.name
+            ),
+            level=messages.SUCCESS
+        )
+        return HttpResponseRedirect(reverse('admin:Application_bikemodel_change', args=[cloned.pk]))
+
+    def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        if object_id:
+            try:
+                extra_context['duplicate_url'] = reverse('admin:Application_bikemodel_duplicate', args=[object_id])
+            except Exception:
+                pass
+        return super().changeform_view(request, object_id=object_id, form_url=form_url, extra_context=extra_context)
+
 class AccessoriesSubCategoryInline(admin.TabularInline):
     model = AccessoriesSubCategoryModel
     extra = 1
@@ -245,6 +317,75 @@ class AccessoriesAdmin(PreserveFilesAdminMixin, admin.ModelAdmin):
     search_fields = ('name','brand')
     list_filter = ('name','brand')
     inlines = [AccessoryImagesInline]
+
+    save_as = True
+    actions = ['duplicate_accessory']
+
+    @admin.action(description="Duplicate selected accessories (creates a copy with all images)")
+    def duplicate_accessory(self, request, queryset):
+        duplicated = []
+        for acc in queryset:
+            cloned = clone_accessory(acc)
+            duplicated.append(cloned)
+
+        if len(duplicated) == 1:
+            cloned = duplicated[0]
+            self.message_user(
+                request,
+                format_html(
+                    'Accessory duplicated successfully as <strong>"{}"</strong>. You are now editing the duplicate. Update the name and any other fields, then click Save.',
+                    cloned.name
+                ),
+                level=messages.SUCCESS
+            )
+            return HttpResponseRedirect(reverse('admin:Application_accessoriesmodel_change', args=[cloned.pk]))
+        else:
+            self.message_user(
+                request,
+                f"Successfully duplicated {len(duplicated)} accessory(ies). You can now edit each duplicate to change its name and details.",
+                level=messages.SUCCESS
+            )
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                '<path:object_id>/duplicate/',
+                self.admin_site.admin_view(self.duplicate_accessory_view),
+                name='Application_accessoriesmodel_duplicate',
+            ),
+        ]
+        return custom_urls + urls
+
+    def duplicate_accessory_view(self, request, object_id):
+        obj = self.get_object(request, object_id)
+        if obj is None:
+            self.message_user(request, "Accessory not found.", level=messages.ERROR)
+            return HttpResponseRedirect(reverse('admin:Application_accessoriesmodel_changelist'))
+
+        if not self.has_add_permission(request):
+            self.message_user(request, "You do not have permission to duplicate accessories.", level=messages.ERROR)
+            return HttpResponseRedirect(reverse('admin:Application_accessoriesmodel_change', args=[object_id]))
+
+        cloned = clone_accessory(obj)
+        self.message_user(
+            request,
+            format_html(
+                'Accessory duplicated successfully as <strong>"{}"</strong>. You are now editing the duplicate. Update the name and any other fields, then click Save.',
+                cloned.name
+            ),
+            level=messages.SUCCESS
+        )
+        return HttpResponseRedirect(reverse('admin:Application_accessoriesmodel_change', args=[cloned.pk]))
+
+    def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        if object_id:
+            try:
+                extra_context['duplicate_url'] = reverse('admin:Application_accessoriesmodel_duplicate', args=[object_id])
+            except Exception:
+                pass
+        return super().changeform_view(request, object_id=object_id, form_url=form_url, extra_context=extra_context)
 
 @admin.register(GuideAndTrainerModel)
 class GuideAndTrainerAdmin(admin.ModelAdmin):
