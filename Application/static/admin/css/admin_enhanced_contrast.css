@@ -220,22 +220,67 @@
     margin-top: 0 !important;
     margin-bottom: 16px !important;
     display: flex !important;
-    gap: 8px !important;
+    gap: 10px !important;
+    align-items: center !important;
 }
 
 .object-tools li {
     list-style: none !important;
+    margin: 0 !important;
 }
 
+/* Primary Duplicate Action Button - Bold Vibrant Blue with White Text */
+.object-tools a.duplicate-action-btn,
+a.duplicate-action-btn {
+    background-color: #2563eb !important;
+    background: #2563eb !important;
+    color: #ffffff !important;
+    border: 1.5px solid #1d4ed8 !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+    padding: 7px 18px !important;
+    border-radius: 6px !important;
+    box-shadow: 0 2px 5px rgba(37, 99, 235, 0.4) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease-in-out !important;
+}
+
+.object-tools a.duplicate-action-btn:hover,
+a.duplicate-action-btn:hover {
+    background-color: #1d4ed8 !important;
+    background: #1d4ed8 !important;
+    color: #ffffff !important;
+    border-color: #1e40af !important;
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.5) !important;
+    transform: translateY(-1px) !important;
+}
+
+.object-tools a.duplicate-action-btn span {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+.object-tools a.duplicate-action-btn svg {
+    stroke: #ffffff !important;
+    display: inline-block !important;
+}
+
+/* Secondary History Button - Crisp Light Gray with Dark Slate Text */
 .object-tools a.historylink {
     background: #f1f5f9 !important;
-    color: #334155 !important;
+    color: #1e293b !important;
     border: 1.5px solid #cbd5e1 !important;
     font-weight: 600 !important;
-    padding: 6px 14px !important;
+    padding: 7px 16px !important;
     border-radius: 6px !important;
     text-decoration: none !important;
     transition: all 0.15s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
 }
 
 .object-tools a.historylink:hover {
@@ -428,3 +473,4 @@
     color: #2563eb !important;
     font-weight: 700 !important;
 }
+
