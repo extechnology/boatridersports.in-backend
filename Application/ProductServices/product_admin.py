@@ -2,6 +2,7 @@ from Application.ProductServices.product_models import ShippingChargeModel
 import nested_admin
 from django.contrib import admin
 from django.utils.html import format_html
+from .admin_file_preserver import PreserveFilesAdminMixin
 from .product_models import (
     BikeCategoryModel, BikeBrandModel, ColorModel, SizeModel, SpecialTagModel,
     BikeModel, BikeSizesModel, BikeColorsModel, BikeImagesModel,
@@ -36,7 +37,7 @@ class RearSuspensionTravelAdmin(admin.ModelAdmin):
     search_fields = ('rear_suspension_travel',)
 
 @admin.register(BikeCategoryModel)
-class BikeCategoryAdmin(admin.ModelAdmin):
+class BikeCategoryAdmin(PreserveFilesAdminMixin, admin.ModelAdmin):
     list_display = ('category_name', 'preview_image', 'created')
     list_filter = ('created',)
     search_fields = ('category_name',)
@@ -49,7 +50,7 @@ class BikeCategoryAdmin(admin.ModelAdmin):
     preview_image.short_description = "Preview"
 
 @admin.register(BikeBrandModel)
-class BikeBrandAdmin(admin.ModelAdmin):
+class BikeBrandAdmin(PreserveFilesAdminMixin, admin.ModelAdmin):
     list_display = ('brand_name', 'preview_image','online_purchase_enabled', 'created')
     list_filter = ('created','online_purchase_enabled')
     search_fields = ('brand_name', 'brand_description')
@@ -62,7 +63,7 @@ class BikeBrandAdmin(admin.ModelAdmin):
     preview_image.short_description = "Preview"
 
 @admin.register(ColorModel)
-class ColorAdmin(admin.ModelAdmin):
+class ColorAdmin(PreserveFilesAdminMixin, admin.ModelAdmin):
     list_display = ('color_name', 'color_code', 'color_code_2', 'preview_color', 'created')
     list_filter = ('created',)
     search_fields = ('color_name', 'color_code')
@@ -125,7 +126,7 @@ class BikeSizesAdmin(admin.ModelAdmin):
     list_filter = ('bike__brand', 'bike_size', 'is_discount', 'is_available', 'is_out_of_stock')
     search_fields = ('bike__name', 'bike_size__size')
 
-class BikeImagesModelNestedInline(nested_admin.NestedTabularInline):
+class BikeImagesModelNestedInline(PreserveFilesAdminMixin, nested_admin.NestedTabularInline):
     model = BikeImagesModel
     extra = 1
     fk_name = 'color'
@@ -146,16 +147,16 @@ class BikeSpecLabelModelInline(nested_admin.NestedTabularInline):
     extra = 1
     inlines = [BikeSpecValueModelInline]
     
-class BikePostersModelInline(nested_admin.NestedStackedInline):
+class BikePostersModelInline(PreserveFilesAdminMixin, nested_admin.NestedStackedInline):
     model = BikePostersModel
     extra = 1
 
-class BikeDownloadsModelInline(nested_admin.NestedStackedInline):
+class BikeDownloadsModelInline(PreserveFilesAdminMixin, nested_admin.NestedStackedInline):
     model = BikeDownloadsModel
     extra = 1
 
 @admin.register(BikeModel)
-class BikeAdmin(nested_admin.NestedModelAdmin):
+class BikeAdmin(PreserveFilesAdminMixin, nested_admin.NestedModelAdmin):
     list_display = ('brand_img','name', 'special_tag', 'brand', 'category', 'price', 'discount_price', 'discount_percentage')
     search_fields = ('name', 'brand__brand_name', 'category__category_name', 'price', 'discount_price', 'discount_percentage')
     list_filter = ('special_tag', 'brand', 'category', 'is_discount', 'is_available', 'is_out_of_stock', 'online_purchase_enabled')
@@ -228,18 +229,18 @@ class AccessoriesSubCategoryInline(admin.TabularInline):
     extra = 1
 
 @admin.register(AccessoriesCategoryModel)
-class AccessoriesCategoryAdmin(admin.ModelAdmin):
+class AccessoriesCategoryAdmin(PreserveFilesAdminMixin, admin.ModelAdmin):
     list_display = ('name',)
     search_fields = ('name',)
     list_filter = ('name',)
     inlines = [AccessoriesSubCategoryInline]
 
-class AccessoryImagesInline(admin.TabularInline):
+class AccessoryImagesInline(PreserveFilesAdminMixin, admin.TabularInline):
     model = AccessoryImagesModel
     extra = 1
 
 @admin.register(AccessoriesModel)
-class AccessoriesAdmin(admin.ModelAdmin):
+class AccessoriesAdmin(PreserveFilesAdminMixin, admin.ModelAdmin):
     list_display = ('name', 'created')
     search_fields = ('name','brand')
     list_filter = ('name','brand')
