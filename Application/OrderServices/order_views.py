@@ -13,7 +13,8 @@ from .order_serializers import (
 )
 from Application.ProductServices.product_models import (
     BikeModel,
-    AccessoriesModel
+    AccessoriesModel,
+    BikeSizesModel
 )
 from .order_utils import order_confirmation_email, process_order_success, process_order_cancellation
 
@@ -140,17 +141,25 @@ class InitaiteChcekOutAPIview(APIView):
 
         payment_session_id = create_order_response.data.payment_session_id if hasattr(create_order_response, 'data') else create_order_response.payment_session_id
 
-        bike_order_items = [
-            BikeOrderItems(
-                bike=item.bike,
-                quantity=item.quantity,
-                price=item.bike.price,
-                subtotal=item.bike.price * item.quantity,
-                color=item.color,
-                size=item.size,
-                order=user_order
-            ) for item in bike_items
-        ]
+        bike_order_items = []
+        for item in bike_items:
+            variant = BikeSizesModel.objects.filter(bike=item.bike, bike_size=item.size).first()
+            if variant and variant.price > 0:
+                item_price = variant.discount_price if (variant.is_discount and variant.discount_price > 0) else variant.price
+            else:
+                item_price = item.bike.discount_price if (item.bike.is_discount and item.bike.discount_price > 0) else item.bike.price
+
+            bike_order_items.append(
+                BikeOrderItems(
+                    bike=item.bike,
+                    quantity=item.quantity,
+                    price=item_price,
+                    subtotal=item_price * item.quantity,
+                    color=item.color,
+                    size=item.size,
+                    order=user_order
+                )
+            )
 
         accessory_order_items = [
             AccessoriesOrderItems(
@@ -320,17 +329,25 @@ class RazorpayInitiateCheckoutAPIView(APIView):
 
         order_id = user_order.unique_id
 
-        bike_order_items = [
-            BikeOrderItems(
-                bike=item.bike,
-                quantity=item.quantity,
-                price=item.bike.price,
-                subtotal=item.bike.price * item.quantity,
-                color=item.color,
-                size=item.size,
-                order=user_order
-            ) for item in bike_items
-        ]
+        bike_order_items = []
+        for item in bike_items:
+            variant = BikeSizesModel.objects.filter(bike=item.bike, bike_size=item.size).first()
+            if variant and variant.price > 0:
+                item_price = variant.discount_price if (variant.is_discount and variant.discount_price > 0) else variant.price
+            else:
+                item_price = item.bike.discount_price if (item.bike.is_discount and item.bike.discount_price > 0) else item.bike.price
+
+            bike_order_items.append(
+                BikeOrderItems(
+                    bike=item.bike,
+                    quantity=item.quantity,
+                    price=item_price,
+                    subtotal=item_price * item.quantity,
+                    color=item.color,
+                    size=item.size,
+                    order=user_order
+                )
+            )
 
         accessory_order_items = [
             AccessoriesOrderItems(

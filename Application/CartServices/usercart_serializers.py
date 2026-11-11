@@ -112,9 +112,35 @@ class UserCartItemsModelBikeSerializer(serializers.ModelSerializer):
     bike = BikesSerializer(read_only=True)
     size = SizesSerializer(read_only=True)
     color = BikeColorsSerializer(read_only=True)
+    size_price = serializers.SerializerMethodField()
+    size_discount_price = serializers.SerializerMethodField()
+    effective_price = serializers.SerializerMethodField()
+
     class Meta:
         model = UserCartItemsModelBike
         fields = '__all__'
+
+    def get_size_price(self, obj):
+        variant = BikeSizesModel.objects.filter(bike=obj.bike, bike_size=obj.size).first()
+        if variant and variant.price > 0:
+            return str(variant.price)
+        return str(obj.bike.price) if obj.bike else "0.00"
+
+    def get_size_discount_price(self, obj):
+        variant = BikeSizesModel.objects.filter(bike=obj.bike, bike_size=obj.size).first()
+        if variant and variant.price > 0:
+            return str(variant.discount_price) if variant.is_discount else "0.00"
+        return str(obj.bike.discount_price) if (obj.bike and obj.bike.is_discount) else "0.00"
+
+    def get_effective_price(self, obj):
+        variant = BikeSizesModel.objects.filter(bike=obj.bike, bike_size=obj.size).first()
+        if variant and variant.price > 0:
+            if variant.is_discount and variant.discount_price > 0:
+                return str(variant.discount_price)
+            return str(variant.price)
+        if obj.bike and obj.bike.is_discount and obj.bike.discount_price > 0:
+            return str(obj.bike.discount_price)
+        return str(obj.bike.price) if obj.bike else "0.00"
 
 class UserCartItemsModelAccessoriesSerializer(serializers.ModelSerializer):
     accessory = AccessoriesSerializer(read_only=True)
@@ -143,10 +169,17 @@ class UserCartModelSerializer(serializers.ModelSerializer):
         total_bike_amount = 0
         total_accessory_amount = 0
         for item in obj.user_cart_bike_items.all():
-            if item.bike.is_discount:
-                total_bike_amount += item.bike.discount_price * item.quantity
+            variant = BikeSizesModel.objects.filter(bike=item.bike, bike_size=item.size).first()
+            if variant and variant.price > 0:
+                if variant.is_discount and variant.discount_price > 0:
+                    total_bike_amount += variant.discount_price * item.quantity
+                else:
+                    total_bike_amount += variant.price * item.quantity
             else:
-                total_bike_amount += item.bike.price * item.quantity
+                if item.bike.is_discount and item.bike.discount_price > 0:
+                    total_bike_amount += item.bike.discount_price * item.quantity
+                else:
+                    total_bike_amount += item.bike.price * item.quantity
         for item in obj.user_cart_accessory_items.all():
             if item.accessory.is_discount:
                 total_accessory_amount += item.accessory.discount_price * item.quantity
@@ -158,7 +191,11 @@ class UserCartModelSerializer(serializers.ModelSerializer):
         total_bike_amount = 0
         total_accessory_amount = 0
         for item in obj.user_cart_bike_items.all():
-            total_bike_amount += item.bike.price * item.quantity
+            variant = BikeSizesModel.objects.filter(bike=item.bike, bike_size=item.size).first()
+            if variant and variant.price > 0:
+                total_bike_amount += variant.price * item.quantity
+            else:
+                total_bike_amount += item.bike.price * item.quantity
         for item in obj.user_cart_accessory_items.all():
             total_accessory_amount += item.accessory.price * item.quantity
         return total_bike_amount + total_accessory_amount   

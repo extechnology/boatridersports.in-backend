@@ -170,14 +170,59 @@ class BikeModel(models.Model):
 
 # bike sizes
 class BikeSizesModel(models.Model):
-    bike = models.ForeignKey(BikeModel, on_delete=models.CASCADE,related_name='bike_sizes')
-    bike_size = models.ForeignKey(SizeModel, on_delete=models.CASCADE,help_text="select the size for the bike")
+    bike = models.ForeignKey(BikeModel, on_delete=models.CASCADE, related_name='bike_sizes')
+    bike_size = models.ForeignKey(SizeModel, on_delete=models.CASCADE, help_text="Select the size for the bike")
+
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Enter the price for this specific size")
+    stock = models.IntegerField(default=0, help_text="Enter stock quantity for this specific size")
+
+    is_available = models.BooleanField(default=True, help_text="Is this size available")
+    is_out_of_stock = models.BooleanField(default=False, help_text="Is this size out of stock")
+
+    is_discount = models.BooleanField(default=False, help_text="Has discount on this size")
+    discount_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Discounted price for this size")
+    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Discount percentage for this size")
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-    
+
+    class Meta:
+        verbose_name = 'Bike Size & Price'
+        verbose_name_plural = 'Bike Sizes & Prices'
+        unique_together = ('bike', 'bike_size')
+
     def __str__(self):
-        return self.bike_size.size
+        size_str = self.bike_size.size if self.bike_size else "Unknown"
+        bike_str = self.bike.name if self.bike else "Unknown Bike"
+        price_val = self.discount_price if (self.is_discount and self.discount_price > 0) else self.price
+        return f"{bike_str} - Size {size_str} (₹{price_val})"
+
+    @property
+    def size(self):
+        return self.bike_size.size if self.bike_size else ""
+
+    def save(self, *args, **kwargs):
+        if self.stock == 0:
+            self.is_out_of_stock = True
+        else:
+            self.is_out_of_stock = False
+
+        if self.is_discount and self.price > 0 and self.discount_price > 0 and not self.discount_percentage:
+            self.discount_percentage = round(((self.price - self.discount_price) / self.price) * 100, 2)
+
+        super().save(*args, **kwargs)
+
+        # Sync with bike's M2M sizes field
+        if self.bike_id and self.bike_size_id:
+            self.bike.sizes.add(self.bike_size)
+
+    def delete(self, *args, **kwargs):
+        bike = self.bike
+        bike_size = self.bike_size
+        super().delete(*args, **kwargs)
+        if bike and bike_size:
+            if not BikeSizesModel.objects.filter(bike=bike, bike_size=bike_size).exists():
+                bike.sizes.remove(bike_size)
 
 # bike colors
 class BikeColorsModel(models.Model):

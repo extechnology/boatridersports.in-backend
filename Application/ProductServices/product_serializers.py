@@ -73,14 +73,27 @@ class SpecialTagSerializer(serializers.ModelSerializer):
 
 
 
-class BikeSizeSerializer(serializers.ModelSerializer):
+class BikeSizesSerializer(serializers.ModelSerializer):
+    size_id = serializers.IntegerField(source='bike_size.id', read_only=True)
+    size = serializers.CharField(source='bike_size.size', read_only=True)
+
     class Meta:
         model = BikeSizesModel
-        fields = ['bike_size']  # This will output the string representation
-    
-    def to_representation(self, instance):
-        # Return just the size string
-        return instance.bike_size.size
+        fields = [
+            'id',
+            'size_id',
+            'size',
+            'price',
+            'stock',
+            'is_available',
+            'is_out_of_stock',
+            'is_discount',
+            'discount_price',
+            'discount_percentage',
+        ]
+
+# Backwards compatibility alias
+BikeSizeSerializer = BikeSizesSerializer
 
 # --------------------
 # BIKE IMAGE SERIALIZER
@@ -187,6 +200,11 @@ class BikeSerializer(serializers.ModelSerializer):
 
     sizes = SizeSerializer(
         many=True,
+        read_only=True
+    )
+    bike_sizes = BikeSizesSerializer(
+        many=True,
+        read_only=True
     )
 
     bike_colors = BikeColorSerializer(many=True, read_only=True)
@@ -237,6 +255,7 @@ class BikeSerializer(serializers.ModelSerializer):
             'youtube_video_id',  # Add this field
 
             'sizes',
+            'bike_sizes',
             'bike_colors',
             'bike_spec_labels',
             'bike_posters',
@@ -267,6 +286,13 @@ class BikeSerializer(serializers.ModelSerializer):
                 return match.group(1)
         
         return None
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # If sizes is empty but bike_sizes has entries, populate sizes with size names
+        if not data.get('sizes') and hasattr(instance, 'bike_sizes') and instance.bike_sizes.exists():
+            data['sizes'] = [bs.bike_size.size for bs in instance.bike_sizes.all() if bs.bike_size]
+        return data
 
 
 class AccessoriesCategorySerializer(serializers.ModelSerializer):

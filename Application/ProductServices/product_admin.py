@@ -104,9 +104,26 @@ class SpecialTagAdmin(admin.ModelAdmin):
     verbose_name = "Special Tag"
     verbose_name_plural = "Special Tags"
 
-class BikeSizesModelInline(admin.TabularInline):
+class BikeSizesModelNestedInline(nested_admin.NestedTabularInline):
     model = BikeSizesModel
     extra = 1
+    fk_name = 'bike'
+    fields = (
+        'bike_size',
+        'price',
+        'stock',
+        'is_available',
+        'is_out_of_stock',
+        'is_discount',
+        'discount_price',
+        'discount_percentage',
+    )
+
+@admin.register(BikeSizesModel)
+class BikeSizesAdmin(admin.ModelAdmin):
+    list_display = ('bike', 'bike_size', 'price', 'is_discount', 'discount_price', 'discount_percentage', 'stock', 'is_available', 'is_out_of_stock')
+    list_filter = ('bike__brand', 'bike_size', 'is_discount', 'is_available', 'is_out_of_stock')
+    search_fields = ('bike__name', 'bike_size__size')
 
 class BikeImagesModelNestedInline(nested_admin.NestedTabularInline):
     model = BikeImagesModel
@@ -140,21 +157,63 @@ class BikeDownloadsModelInline(nested_admin.NestedStackedInline):
 @admin.register(BikeModel)
 class BikeAdmin(nested_admin.NestedModelAdmin):
     list_display = ('brand_img','name', 'special_tag', 'brand', 'category', 'price', 'discount_price', 'discount_percentage')
-    search_fields = ('name', 'special_tag', 'brand', 'category', 'price', 'discount_price', 'discount_percentage')
-    list_filter = ('name', 'special_tag', 'brand', 'category', 'price', 'discount_price', 'discount_percentage','online_purchase_enabled')
+    search_fields = ('name', 'brand__brand_name', 'category__category_name', 'price', 'discount_price', 'discount_percentage')
+    list_filter = ('special_tag', 'brand', 'category', 'is_discount', 'is_available', 'is_out_of_stock', 'online_purchase_enabled')
 
-    inlines = [BikeColorsModelNestedInline,BikeSpecLabelModelInline,BikePostersModelInline,BikeDownloadsModelInline]
+    inlines = [
+        BikeSizesModelNestedInline,
+        BikeColorsModelNestedInline,
+        BikeSpecLabelModelInline,
+        BikePostersModelInline,
+        BikeDownloadsModelInline
+    ]
 
     fieldsets = (
-        (None, {
+        ('Basic Information', {
             'fields': (
-                'name','wheel_size','sizes','material','suspension',
-                'rear_suspension_travel', 'description', 'special_tag', 
-                'brand', 'category', 'price','is_discount', 'discount_price', 
-                'discount_percentage', 'background_color', 'text_color', 'is_dark', 
-                'is_featured', 'featured_image', 'youtube_link','is_available',
-                'is_out_of_stock','stock','online_purchase_enabled','shipping_charge'
-                )
+                'name',
+                'brand',
+                'category',
+                'special_tag',
+                'description',
+            )
+        }),
+        ('Specifications', {
+            'fields': (
+                'wheel_size',
+                'material',
+                'suspension',
+                'rear_suspension_travel',
+                'sizes',
+            )
+        }),
+        ('Default / Base Pricing & Stock', {
+            'description': 'Base price for the bike. When size variants are added below in "Bike Sizes & Prices", each size has its own specific price and stock.',
+            'fields': (
+                'price',
+                'stock',
+                'is_available',
+                'is_out_of_stock',
+                'is_discount',
+                'discount_price',
+                'discount_percentage',
+            )
+        }),
+        ('Display & Media', {
+            'fields': (
+                'background_color',
+                'text_color',
+                'is_dark',
+                'is_featured',
+                'featured_image',
+                'youtube_link',
+            )
+        }),
+        ('E-commerce & Shipping', {
+            'fields': (
+                'online_purchase_enabled',
+                'shipping_charge',
+            )
         }),
     )
     
