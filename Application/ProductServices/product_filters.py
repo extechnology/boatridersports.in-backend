@@ -204,6 +204,66 @@ def _build_smart_spec_q(field_name, values):
     return combined_q
 
 
+def _build_combined_category_subcat_q(categories, sub_categories):
+    """
+    Builds a hierarchical scoped Q object when both categories and subcategories are selected.
+    If multiple categories are selected (e.g. ['Gear', 'Accessories']) and a subcategory is selected
+    (e.g. ['Gears']):
+      - Categories that have matching selected subcategories are filtered by those subcategories.
+      - Categories that have NO selected subcategories retain ALL their products!
+      - Subcategories that don't belong to any selected category are also included.
+    """
+    cat_list = _normalize_filter_values(categories)
+    subcat_list = _normalize_filter_values(sub_categories)
+
+    if not cat_list and not subcat_list:
+        return Q()
+
+    if cat_list and not subcat_list:
+        return _build_smart_category_q(cat_list)
+
+    if not cat_list and subcat_list:
+        return _build_smart_category_q(subcat_list)
+
+    from .product_models import AccessoriesSubCategoryModel
+
+    cat_to_subs = {}
+    for cat in cat_list:
+        cat_to_subs[cat] = []
+        cat_q = _build_smart_category_q([cat])
+        for sub in subcat_list:
+            sub_q = _build_smart_category_q([sub])
+            has_match = (
+                AccessoriesModel.objects.filter(cat_q & sub_q).exists() or
+                AccessoriesSubCategoryModel.objects.filter(
+                    Q(category__name__iexact=cat) | Q(category__name__icontains=cat),
+                    Q(name__iexact=sub) | Q(name__icontains=sub)
+                ).exists()
+            )
+            if has_match:
+                cat_to_subs[cat].append(sub)
+
+    consumed_subs = set()
+    for cat, subs in cat_to_subs.items():
+        consumed_subs.update(subs)
+
+    orphan_subs = [s for s in subcat_list if s not in consumed_subs]
+
+    final_q = Q()
+    for cat, matching_subs in cat_to_subs.items():
+        cat_base_q = _build_smart_category_q([cat])
+        if matching_subs:
+            subs_q = _build_smart_category_q(matching_subs)
+            final_q |= (cat_base_q & subs_q)
+        else:
+            final_q |= cat_base_q
+
+    if orphan_subs:
+        final_q |= _build_smart_category_q(orphan_subs)
+
+    return final_q
+
+
 class AccessoriesFilter(filters.FilterSet):
 
     # 🔹 Price filters (considering discount_price if active)
@@ -246,13 +306,21 @@ class AccessoriesFilter(filters.FilterSet):
         categories = self.request.GET.getlist("category") if self.request else []
         if not categories and value:
             categories = [value]
+        sub_categories = self.request.GET.getlist("sub_category") if self.request else []
+        if sub_categories:
+            q = _build_combined_category_subcat_q(categories, sub_categories)
+            return queryset.filter(q) if q else queryset
         q = _build_smart_category_q(categories)
         return queryset.filter(q) if q else queryset
 
     def filter_sub_category(self, queryset, name, value):
+        categories = self.request.GET.getlist("category") if self.request else []
         sub_categories = self.request.GET.getlist("sub_category") if self.request else []
         if not sub_categories and value:
             sub_categories = [value]
+        if categories:
+            # Combined category & sub_category filtering is already handled in filter_category
+            return queryset
         q = _build_smart_category_q(sub_categories)
         return queryset.filter(q) if q else queryset
 
@@ -548,15 +616,10 @@ def accessories_filters(request):
             brand_q |= Q(brand__brand_name__iexact=b) | Q(brand__brand_name__icontains=b)
         queryset = queryset.filter(brand_q)
 
-    if category:
-        cat_q = _build_smart_category_q(category)
-        if cat_q:
-            queryset = queryset.filter(cat_q)
-
-    if sub_category:
-        subcat_q = _build_smart_category_q(sub_category)
-        if subcat_q:
-            queryset = queryset.filter(subcat_q)
+    if category or sub_category:
+        cat_sub_q = _build_combined_category_subcat_q(category, sub_category)
+        if cat_sub_q:
+            queryset = queryset.filter(cat_sub_q)
 
     if model_no:
         q = _build_smart_spec_q('model_no', model_no)
