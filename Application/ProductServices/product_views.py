@@ -200,9 +200,9 @@ class ProductFilterView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # ---- Cache key (INCLUDE PAGE & PAGE_SIZE) ----
-        query_params = request.query_params.dict()
-        query_string = json.dumps(query_params, sort_keys=True)
+        # ---- Cache key (INCLUDE PAGE & PAGE_SIZE, MULTI-VAL PARAMS) ----
+        query_param_items = [(k, sorted(request.query_params.getlist(k))) for k in sorted(request.query_params.keys())]
+        query_string = json.dumps(query_param_items, sort_keys=True)
         cache_key = f"products_{hashlib.md5(query_string.encode()).hexdigest()}"
 
         cached_data = cache.get(cache_key)
