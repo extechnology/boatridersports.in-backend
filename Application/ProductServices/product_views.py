@@ -7,6 +7,8 @@ from django.core.cache import cache
 from rest_framework.pagination import PageNumberPagination
 from itertools import chain
 
+from Application.media_utils import build_absolute_media_url, sanitize_https_media
+
 from .product_serializers import *
 from .product_models import *
 
@@ -240,11 +242,11 @@ class NavbarItemsAPIView(APIView):
     def get(self, request):
         query_params = request.query_params.dict()
         query_string = json.dumps(query_params, sort_keys=True)
-        cache_key = f"navbar_items_{hashlib.md5(query_string.encode()).hexdigest()}"
+        cache_key = f"navbar_items_{hashlib.md5(f'{query_string}_{request.scheme}'.encode()).hexdigest()}"
         cached_data = cache.get(cache_key)
 
         if cached_data:
-            return Response(cached_data)
+            return Response(sanitize_https_media(cached_data))
 
         # ------------------ BIKE DATA ------------------
         bike_categories = BikeCategoryModel.objects.all().order_by('-created')[:12]
@@ -259,7 +261,7 @@ class NavbarItemsAPIView(APIView):
                 bike_image = BikeImagesModel.objects.filter(color=bike_color).first()
 
                 image = (
-                    f"{request.scheme}://{request.get_host()}{bike_image.image.url}"
+                    build_absolute_media_url(request, bike_image.image.url)
                     if bike_image else None
                 )
 
@@ -278,7 +280,7 @@ class NavbarItemsAPIView(APIView):
             bike_items.append({
                 'title': category.category_name,
                 'image': (
-                    f"{request.scheme}://{request.get_host()}{category.category_image.url}"
+                    build_absolute_media_url(request, category.category_image.url)
                     if category.category_image else None
                 ),
                 'items': items
@@ -297,7 +299,7 @@ class NavbarItemsAPIView(APIView):
             for accessory in accessories:
                 images = AccessoryImagesModel.objects.filter(accessory=accessory).first()
                 image = (
-                    f"{request.scheme}://{request.get_host()}{images.image.url}"
+                    build_absolute_media_url(request, images.image.url)
                     if images else None
                 )
 
@@ -316,7 +318,7 @@ class NavbarItemsAPIView(APIView):
             accessories_items.append({
                 'title': category.name,
                 'image': (
-                    f"{request.scheme}://{request.get_host()}{category.image.url}"
+                    build_absolute_media_url(request, category.image.url)
                     if category.image else None
                 ),
                 'items': items
@@ -338,7 +340,7 @@ class ShopBuy(APIView):
         cache_key = f"shop_buy_{hashlib.md5(request.query_params.urlencode().encode()).hexdigest()}"
         cached_data = cache.get(cache_key)
         if cached_data:
-            return Response(cached_data, status=status.HTTP_200_OK)
+            return Response(sanitize_https_media(cached_data), status=status.HTTP_200_OK)
         bike_categories = BikeCategoryModel.objects.all().order_by('-created')[:12]
         accessories_categories = AccessoriesCategoryModel.objects.all().order_by('-created')[:12]
         
@@ -353,7 +355,7 @@ class ShopBuy(APIView):
             
             return {
                 'title': name,
-                'image': request.build_absolute_uri(image.url) if image else None,
+                'image': build_absolute_media_url(request, image.url) if image else None,
                 'type': 'bike' if isinstance(category, BikeCategoryModel) else 'accessories'
             }
         

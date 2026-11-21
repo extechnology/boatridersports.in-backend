@@ -1,3 +1,4 @@
+from Application.media_utils import build_absolute_media_url
 from rest_framework import serializers
 from .product_models import (
     BikeCategoryModel, BikeBrandModel, ColorModel, SizeModel, SpecialTagModel,
@@ -94,9 +95,7 @@ class BikeImagesSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         # Return just the image URL
         request = self.context.get('request')
-        if request:
-            return f"{request.scheme}://{request.get_host()}{instance.image.url}"
-        return instance.image.url
+        return build_absolute_media_url(request, instance.image.url)
 
     
 
@@ -291,9 +290,7 @@ class AccessoryImagesSerializer(serializers.ModelSerializer):
     
     def to_representation(self, instance):
         request = self.context.get('request')
-        if request:
-            return f"{request.scheme}://{request.get_host()}{instance.image.url}"
-        return instance.image.url
+        return build_absolute_media_url(request, instance.image.url)
 
 
 class AccessoriesSerializer(serializers.ModelSerializer):
@@ -338,6 +335,4 @@ class BikeBrandImageSerializer(serializers.ModelSerializer):
     
     def to_representation(self, instance):
         request = self.context.get('request')
-        if request:
-            return f"{request.scheme}://{request.get_host()}{instance.brand_image.url}"
-        return instance.brand_image.url
+        return build_absolute_media_url(request, instance.brand_image.url)
