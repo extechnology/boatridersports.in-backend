@@ -48,19 +48,35 @@ class BikesAPIView(APIView):
         return Response(serializer.data)
 
 
+def _clean_unique_list(values):
+    seen = set()
+    result = []
+    for val in values:
+        if val is None:
+            continue
+        cleaned = str(val).strip()
+        if not cleaned:
+            continue
+        key = cleaned.lower()
+        if key not in seen:
+            seen.add(key)
+            result.append(cleaned)
+    return result
+
+
 class ProductsFilterSideBarAPIView(APIView):
     def get(self, request):
         sidebar = request.query_params.get("sidebar")
         
         if sidebar == "bike":
             data = {
-                "categories": list(BikeCategoryModel.objects.values_list("category_name", flat=True)),
-                "brands": list(BikeBrandModel.objects.values_list("brand_name", flat=True)),
-                "sizes": list(SizeModel.objects.values_list("size", flat=True)),
-                "wheel_sizes": list(WheelSizeModel.objects.values_list("wheel_size", flat=True)),
-                "materials": list(MaterialModel.objects.values_list("material", flat=True)),
-                "suspensions": list(SuspensionModel.objects.values_list("suspension", flat=True)),
-                "rearSuspensionTravel": list(
+                "categories": _clean_unique_list(BikeCategoryModel.objects.values_list("category_name", flat=True)),
+                "brands": _clean_unique_list(BikeBrandModel.objects.values_list("brand_name", flat=True)),
+                "sizes": _clean_unique_list(SizeModel.objects.values_list("size", flat=True)),
+                "wheel_sizes": _clean_unique_list(WheelSizeModel.objects.values_list("wheel_size", flat=True)),
+                "materials": _clean_unique_list(MaterialModel.objects.values_list("material", flat=True)),
+                "suspensions": _clean_unique_list(SuspensionModel.objects.values_list("suspension", flat=True)),
+                "rearSuspensionTravel": _clean_unique_list(
                     RearSuspensionTravelModel.objects.values_list("rear_suspension_travel", flat=True)
                 ),
                 "colors": [
@@ -71,23 +87,23 @@ class ProductsFilterSideBarAPIView(APIView):
                     for c in ColorModel.objects.all()
                 ],
                 "product_type": "bike",
-                "special_tags": list(SpecialTagModel.objects.values_list("tag_name", flat=True))
+                "special_tags": _clean_unique_list(SpecialTagModel.objects.values_list("tag_name", flat=True))
             }
             return Response(data)
             
         elif sidebar == "accessories":
             data = {
-                "categories": list(
+                "categories": _clean_unique_list(
                     AccessoriesCategoryModel.objects.values_list("name", flat=True)
                 ),
-                "sub_categories": list(
+                "sub_categories": _clean_unique_list(
                     AccessoriesSubCategoryModel.objects.values_list("name", flat=True)
                 ),
-                "brands": list(
+                "brands": _clean_unique_list(
                     BikeBrandModel.objects.values_list("brand_name", flat=True)
                 ),
                 "product_type": "accessories",  
-                "special_tags": list(
+                "special_tags": _clean_unique_list(
                     SpecialTagModel.objects.values_list("tag_name", flat=True)
                 )
             }

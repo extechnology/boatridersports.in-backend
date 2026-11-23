@@ -168,6 +168,12 @@ class AccessoriesSubCategoryInline(admin.TabularInline):
     model = AccessoriesSubCategoryModel
     extra = 1
 
+@admin.register(AccessoriesSubCategoryModel)
+class AccessoriesSubCategoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'category')
+    search_fields = ('name', 'category__name')
+    list_filter = ('category',)
+
 @admin.register(AccessoriesCategoryModel)
 class AccessoriesCategoryAdmin(admin.ModelAdmin):
     list_display = ('name',)

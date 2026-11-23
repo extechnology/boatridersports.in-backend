@@ -286,7 +286,14 @@ class AccessoriesSubCategoryModel(models.Model):
     name = models.CharField(max_length=255, help_text="Enter the name for the accessory")
     # description = models.TextField(help_text="Enter the description for the accessory")
 
+    class Meta:
+        ordering = ['category__name', 'name']
+        verbose_name = "Accessories Sub Category"
+        verbose_name_plural = "Accessories Sub Categories"
+
     def __str__(self):
+        if self.category:
+            return f"{self.category.name} — {self.name}"
         return self.name
 
 class AccessoriesModel(models.Model):

@@ -25,6 +25,7 @@ if env_file.exists():
 else:
     from decouple import config
 
+
 USE_L10N = True
 USE_TZ = True
 TIME_ZONE = 'Asia/Kolkata'
@@ -37,8 +38,8 @@ TIME_ZONE = 'Asia/Kolkata'
 SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=False)
-
+DEBUG = config('DEBUG', default=False, cast=bool)
+# DEBUG = False
 ALLOWED_HOSTS = ['*']
 
 
@@ -73,7 +74,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# Allow Django Admin modal popups / iframes on the same origin (Jet Admin related model "+ add" popups)
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 ROOT_URLCONF = 'BotRiderProject.urls'
@@ -118,6 +118,18 @@ DATABASES = {
 #     }
 # }
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': config('PS_DB_NAME'),
+#         'USER': config('PS_DB_USER'),
+#         'PASSWORD': config('PS_DB_PASSWORD'),
+#         'HOST': config('PS_DB_HOST', default='127.0.0.1'),
+#         'PORT': config('PS_DB_PORT', default='5432'),
+#         'CONN_MAX_AGE': 60,
+#     }
+# }
+
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
@@ -152,7 +164,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 MEDIA_URL = '/media/'
@@ -169,10 +181,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+# SECURE_SSL_REDIRECT = True
+
+# SECURE_CONTENT_TYPE_NOSNIFF = True
 
 
-# CORS_ALLOW_ALL_ORIGINS = True
-# CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOW_HEADERS = [
     'accept',
@@ -207,25 +222,26 @@ CORS_ALLOW_METHODS = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-
     "http://localhost:8080",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
-    "https://pv0smzkc-8000.inc1.devtunnels.ms",
+    "https://tgg4qp85-8000.inc1.devtunnels.ms",
     "https://server.boatridersports.in",
     "https://www.server.boatridersports.in",
     "https://www.boatridersports.in",
     "https://boatridersports.in",
-    "http://localhost:8080",
+    "http://boatridersports.in",
     "https://dashboard.boatridersports.in",
     "https://www.dashboard.boatridersports.in",
+    "http://dashboard.boatridersports.in",
+    "http://www.dashboard.boatridersports.in",
     "http://127.0.0.1:8080",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://192.168.56.1:8080",
-    "http://192.168.1.12:8080"
+    "http://192.168.1.12:8080",
+    "http://192.168.1.51:8080",
 ]
-
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:8080",
@@ -236,15 +252,19 @@ CSRF_TRUSTED_ORIGINS = [
     "https://www.server.boatridersports.in",
     "https://www.boatridersports.in",
     "https://boatridersports.in",
-    "http://localhost:8080",
+    "http://boatridersports.in",
     "https://dashboard.boatridersports.in",
     "https://www.dashboard.boatridersports.in",
+    "http://dashboard.boatridersports.in",
+    "http://www.dashboard.boatridersports.in",
     "http://127.0.0.1:8080",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://192.168.56.1:8080",
-    "http://192.168.1.12:8080"
+    "http://192.168.1.12:8080",
+    "http://192.168.1.51:8080",
 ]
+
 
 SESSION_COOKIE_SAMESITE = "None"
 SESSION_COOKIE_SECURE = True
@@ -292,8 +312,8 @@ AUTHENTICATION_BACKENDS = [
 
 EMAIL_BACKEND = config('EMAIL_BACKEND')
 EMAIL_HOST = config('EMAIL_HOST')
-EMAIL_PORT = config('EMAIL_PORT')
-EMAIL_USE_TLS = config('EMAIL_USE_TLS')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
@@ -339,6 +359,10 @@ JET_THEMES = [
         'title': 'Light Gray'
     }
 ]
+
+
+
+
 JET_CHANGE_FORM_SIBLING_LINKS = True
 # JET_COMPACT_SIDENAV = True
 # JET_DEFAULT_THEME = 'default'
@@ -355,6 +379,7 @@ CACHES = {
         }
     }
 }
+
 
 
 CASHFREE_CLIENT_ID = config('CASHFREE_CLIENT_ID')
