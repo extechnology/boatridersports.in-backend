@@ -50,15 +50,23 @@
 }
 
 /* -------------------- 2. Field Labels -------------------- */
-.change-form .form-row label,
+.change-form .form-row > label,
 .change-form .form-row > div > label,
-.change-form .form-row > label {
+.change-form .aligned label {
+    width: 175px !important;
+    min-width: 175px !important;
+    max-width: 175px !important;
     color: #0f172a !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
     font-size: 13px !important;
     letter-spacing: 0.01em !important;
-    margin-bottom: 5px !important;
-    display: inline-block !important;
+    padding-top: 9px !important;
+    margin: 0 !important;
+    line-height: 1.4 !important;
+    text-align: left !important;
+    float: none !important;
+    display: block !important;
+    flex-shrink: 0 !important;
 }
 
 /* Required field indicator */
@@ -176,8 +184,15 @@
 
 /* Form row division & hover */
 .change-form .form-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    padding: 12px 20px !important;
     border-bottom: 1px solid #f1f5f9 !important;
-    padding: 12px 6px !important;
+    background: #ffffff !important;
+    gap: 18px !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
     transition: background-color 0.15s ease !important;
 }
 

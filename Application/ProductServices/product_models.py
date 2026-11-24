@@ -170,14 +170,59 @@ class BikeModel(models.Model):
 
 # bike sizes
 class BikeSizesModel(models.Model):
-    bike = models.ForeignKey(BikeModel, on_delete=models.CASCADE,related_name='bike_sizes')
-    bike_size = models.ForeignKey(SizeModel, on_delete=models.CASCADE,help_text="select the size for the bike")
+    bike = models.ForeignKey(BikeModel, on_delete=models.CASCADE, related_name='bike_sizes')
+    bike_size = models.ForeignKey(SizeModel, on_delete=models.CASCADE, help_text="Select the size for the bike")
+
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Enter the price for this specific size")
+    stock = models.IntegerField(default=0, help_text="Enter stock quantity for this specific size")
+
+    is_available = models.BooleanField(default=True, help_text="Is this size available")
+    is_out_of_stock = models.BooleanField(default=False, help_text="Is this size out of stock")
+
+    is_discount = models.BooleanField(default=False, help_text="Has discount on this size")
+    discount_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Discounted price for this size")
+    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Discount percentage for this size")
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-    
+
+    class Meta:
+        verbose_name = 'Bike Size & Price'
+        verbose_name_plural = 'Bike Sizes & Prices'
+        unique_together = ('bike', 'bike_size')
+
     def __str__(self):
-        return self.bike_size.size
+        size_str = self.bike_size.size if self.bike_size else "Unknown"
+        bike_str = self.bike.name if self.bike else "Unknown Bike"
+        price_val = self.discount_price if (self.is_discount and self.discount_price > 0) else self.price
+        return f"{bike_str} - Size {size_str} (₹{price_val})"
+
+    @property
+    def size(self):
+        return self.bike_size.size if self.bike_size else ""
+
+    def save(self, *args, **kwargs):
+        if self.stock == 0:
+            self.is_out_of_stock = True
+        else:
+            self.is_out_of_stock = False
+
+        if self.is_discount and self.price > 0 and self.discount_price > 0 and not self.discount_percentage:
+            self.discount_percentage = round(((self.price - self.discount_price) / self.price) * 100, 2)
+
+        super().save(*args, **kwargs)
+
+        # Sync with bike's M2M sizes field
+        if self.bike_id and self.bike_size_id:
+            self.bike.sizes.add(self.bike_size)
+
+    def delete(self, *args, **kwargs):
+        bike = self.bike
+        bike_size = self.bike_size
+        super().delete(*args, **kwargs)
+        if bike and bike_size:
+            if not BikeSizesModel.objects.filter(bike=bike, bike_size=bike_size).exists():
+                bike.sizes.remove(bike_size)
 
 # bike colors
 class BikeColorsModel(models.Model):
@@ -299,6 +344,8 @@ class AccessoriesSubCategoryModel(models.Model):
 class AccessoriesModel(models.Model):
     unique_id =  models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     name = models.CharField(max_length=255, help_text="Enter the name for the accessory")
+    model_name = models.CharField(max_length=255, null=True, blank=True, help_text="Enter the model name (e.g. Deore XT, GX Eagle)")
+    model_no = models.CharField(max_length=255, null=True, blank=True, help_text="Enter the model number (e.g. RD-M8100, CN-M7100)")
     description = models.TextField(help_text="Enter the description for the accessory")
 
     product_type = models.CharField(max_length=255,default = 'accessories',editable=False) 
@@ -307,6 +354,18 @@ class AccessoriesModel(models.Model):
     
     sub_category = models.ForeignKey(AccessoriesSubCategoryModel,on_delete=models.CASCADE,related_name='accessories')
     brand = models.ForeignKey(BikeBrandModel,related_name='accessories',on_delete=models.CASCADE,null=True,blank=True)
+
+    # Optional Filter / Specification Attributes
+    speed = models.CharField(max_length=100, null=True, blank=True, help_text="Enter speed (e.g. 12 Speed, 11 Speed, 10 Speed, Single Speed)")
+    tire_type = models.CharField(max_length=100, null=True, blank=True, help_text="Enter tire type (e.g. Tubeless Ready, Clincher, Tubular, Folding Bead)")
+    hub_width = models.CharField(max_length=100, null=True, blank=True, help_text="Enter hub width (e.g. 148mm Boost, 142mm, 135mm, 100mm, 110mm Boost)")
+    valve_type = models.CharField(max_length=100, null=True, blank=True, help_text="Enter valve type (e.g. Presta, Schrader, Dunlop)")
+    size = models.CharField(max_length=100, null=True, blank=True, help_text="Enter size (e.g. 29x2.40, 700x28c, M, L, XL, EU 42, 31.8mm)")
+    ml = models.CharField(max_length=100, null=True, blank=True, help_text="Enter volume / liquid quantity (e.g. 100ml, 120ml, 250ml, 500ml, 750ml, 1L)")
+    color = models.CharField(max_length=100, null=True, blank=True, help_text="Enter color (e.g. Black, Red, Silver, Matte Grey)")
+    bike_mounted_type = models.CharField(max_length=150, null=True, blank=True, help_text="Enter mounting type (e.g. Handlebar, Frame, Saddle, Seatpost, Fork, Direct Mount)")
+    material = models.CharField(max_length=150, null=True, blank=True, help_text="Enter material (e.g. Alloy, Carbon, Steel, Plastic, Silicone, Composite)")
+    warranty = models.CharField(max_length=100, null=True, blank=True, help_text="Enter warranty period (e.g. 6 Months, 1 Year, 2 Years, 3 Years, Lifetime)")
 
     price = models.DecimalField(max_digits=10, decimal_places=2,help_text="Enter the price for the accessory")
     stock = models.IntegerField(default=0)
@@ -320,6 +379,9 @@ class AccessoriesModel(models.Model):
     
     online_purchase_enabled = models.BooleanField(default=True)
     shipping_charge = models.DecimalField(max_digits=10, decimal_places=2,default=0)
+
+    class Meta:
+        ordering = ['-created']
 
     def __str__(self):
         return self.name

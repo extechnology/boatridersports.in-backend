@@ -1,7 +1,11 @@
 from Application.ProductServices.product_models import ShippingChargeModel
 import nested_admin
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.utils.html import format_html
+from django.urls import path, reverse
+from django.http import HttpResponseRedirect
+from .admin_file_preserver import PreserveFilesAdminMixin
+from .admin_duplicator import clone_bike, clone_accessory
 from .product_models import (
     BikeCategoryModel, BikeBrandModel, ColorModel, SizeModel, SpecialTagModel,
     BikeModel, BikeSizesModel, BikeColorsModel, BikeImagesModel,
@@ -36,7 +40,7 @@ class RearSuspensionTravelAdmin(admin.ModelAdmin):
     search_fields = ('rear_suspension_travel',)
 
 @admin.register(BikeCategoryModel)
-class BikeCategoryAdmin(admin.ModelAdmin):
+class BikeCategoryAdmin(PreserveFilesAdminMixin, admin.ModelAdmin):
     list_display = ('category_name', 'preview_image', 'created')
     list_filter = ('created',)
     search_fields = ('category_name',)
@@ -49,7 +53,7 @@ class BikeCategoryAdmin(admin.ModelAdmin):
     preview_image.short_description = "Preview"
 
 @admin.register(BikeBrandModel)
-class BikeBrandAdmin(admin.ModelAdmin):
+class BikeBrandAdmin(PreserveFilesAdminMixin, admin.ModelAdmin):
     list_display = ('brand_name', 'preview_image','online_purchase_enabled', 'created')
     list_filter = ('created','online_purchase_enabled')
     search_fields = ('brand_name', 'brand_description')
@@ -62,7 +66,7 @@ class BikeBrandAdmin(admin.ModelAdmin):
     preview_image.short_description = "Preview"
 
 @admin.register(ColorModel)
-class ColorAdmin(admin.ModelAdmin):
+class ColorAdmin(PreserveFilesAdminMixin, admin.ModelAdmin):
     list_display = ('color_name', 'color_code', 'color_code_2', 'preview_color', 'created')
     list_filter = ('created',)
     search_fields = ('color_name', 'color_code')
@@ -104,11 +108,28 @@ class SpecialTagAdmin(admin.ModelAdmin):
     verbose_name = "Special Tag"
     verbose_name_plural = "Special Tags"
 
-class BikeSizesModelInline(admin.TabularInline):
+class BikeSizesModelNestedInline(nested_admin.NestedTabularInline):
     model = BikeSizesModel
     extra = 1
+    fk_name = 'bike'
+    fields = (
+        'bike_size',
+        'price',
+        'stock',
+        'is_available',
+        'is_out_of_stock',
+        'is_discount',
+        'discount_price',
+        'discount_percentage',
+    )
 
-class BikeImagesModelNestedInline(nested_admin.NestedTabularInline):
+@admin.register(BikeSizesModel)
+class BikeSizesAdmin(admin.ModelAdmin):
+    list_display = ('bike', 'bike_size', 'price', 'is_discount', 'discount_price', 'discount_percentage', 'stock', 'is_available', 'is_out_of_stock')
+    list_filter = ('bike__brand', 'bike_size', 'is_discount', 'is_available', 'is_out_of_stock')
+    search_fields = ('bike__name', 'bike_size__size')
+
+class BikeImagesModelNestedInline(PreserveFilesAdminMixin, nested_admin.NestedTabularInline):
     model = BikeImagesModel
     extra = 1
     fk_name = 'color'
@@ -129,40 +150,142 @@ class BikeSpecLabelModelInline(nested_admin.NestedTabularInline):
     extra = 1
     inlines = [BikeSpecValueModelInline]
     
-class BikePostersModelInline(nested_admin.NestedStackedInline):
+class BikePostersModelInline(PreserveFilesAdminMixin, nested_admin.NestedStackedInline):
     model = BikePostersModel
     extra = 1
 
-class BikeDownloadsModelInline(nested_admin.NestedStackedInline):
+class BikeDownloadsModelInline(PreserveFilesAdminMixin, nested_admin.NestedStackedInline):
     model = BikeDownloadsModel
     extra = 1
 
 @admin.register(BikeModel)
-class BikeAdmin(nested_admin.NestedModelAdmin):
+class BikeAdmin(PreserveFilesAdminMixin, nested_admin.NestedModelAdmin):
+    change_form_template = 'admin/Application/bikemodel/change_form.html'
     list_display = ('brand_img','name', 'special_tag', 'brand', 'category', 'price', 'discount_price', 'discount_percentage')
-    search_fields = ('name', 'special_tag', 'brand', 'category', 'price', 'discount_price', 'discount_percentage')
-    list_filter = ('name', 'special_tag', 'brand', 'category', 'price', 'discount_price', 'discount_percentage','online_purchase_enabled')
+    search_fields = ('name', 'brand__brand_name', 'category__category_name', 'price', 'discount_price', 'discount_percentage')
+    list_filter = ('special_tag', 'brand', 'category', 'is_discount', 'is_available', 'is_out_of_stock', 'online_purchase_enabled')
 
-    inlines = [BikeColorsModelNestedInline,BikeSpecLabelModelInline,BikePostersModelInline,BikeDownloadsModelInline]
+    save_as = True
+    actions = ['duplicate_bike']
+
+    inlines = [
+        BikeSizesModelNestedInline,
+        BikeColorsModelNestedInline,
+        BikeSpecLabelModelInline,
+        BikePostersModelInline,
+        BikeDownloadsModelInline
+    ]
 
     fieldsets = (
-        (None, {
+        ('Basic Information', {
             'fields': (
-                'name','wheel_size','sizes','material','suspension',
-                'rear_suspension_travel', 'description', 'special_tag', 
-                'brand', 'category', 'price','is_discount', 'discount_price', 
-                'discount_percentage', 'background_color', 'text_color', 'is_dark', 
-                'is_featured', 'featured_image', 'youtube_link','is_available',
-                'is_out_of_stock','stock','online_purchase_enabled','shipping_charge'
-                )
+                'name',
+                ('brand', 'category'),
+                'special_tag',
+                'description',
+            )
+        }),
+        ('Specifications', {
+            'fields': (
+                ('wheel_size', 'sizes'),
+                ('material', 'suspension'),
+                'rear_suspension_travel',
+            )
+        }),
+        ('Default / Base Pricing & Stock', {
+            'description': 'Base pricing for the bike. When size variants are configured below in "Bike Sizes & Prices", each size has its own specific price and stock.',
+            'fields': (
+                ('price', 'stock'),
+                ('is_available', 'is_out_of_stock'),
+                ('is_discount', 'discount_price', 'discount_percentage'),
+            )
+        }),
+        ('Display & Media', {
+            'fields': (
+                ('background_color', 'text_color'),
+                'is_dark',
+                ('is_featured', 'featured_image'),
+                'youtube_link',
+            )
+        }),
+        ('E-commerce & Shipping', {
+            'fields': (
+                ('online_purchase_enabled', 'shipping_charge'),
+            )
         }),
     )
     
     def brand_img(self, obj):
-        if obj.brand.brand_image:
+        if obj.brand and obj.brand.brand_image:
             return format_html('<img src="{}" width="50" height="50" style="object-fit: cover;" />', obj.brand.brand_image.url)
         return "-"
     brand_img.short_description = "Brand"
+
+    @admin.action(description="Duplicate selected bikes (creates a full copy with all inlines)")
+    def duplicate_bike(self, request, queryset):
+        duplicated = []
+        for bike in queryset:
+            cloned = clone_bike(bike)
+            duplicated.append(cloned)
+
+        if len(duplicated) == 1:
+            cloned = duplicated[0]
+            self.message_user(
+                request,
+                format_html(
+                    'Bike duplicated successfully as <strong>"{}"</strong>. You are now editing the duplicate. Update the name and any other fields, then click Save.',
+                    cloned.name
+                ),
+                level=messages.SUCCESS
+            )
+            return HttpResponseRedirect(reverse('admin:Application_bikemodel_change', args=[cloned.pk]))
+        else:
+            self.message_user(
+                request,
+                f"Successfully duplicated {len(duplicated)} bike(s). You can now edit each duplicate to change its name and details.",
+                level=messages.SUCCESS
+            )
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                '<path:object_id>/duplicate/',
+                self.admin_site.admin_view(self.duplicate_bike_view),
+                name='Application_bikemodel_duplicate',
+            ),
+        ]
+        return custom_urls + urls
+
+    def duplicate_bike_view(self, request, object_id):
+        obj = self.get_object(request, object_id)
+        if obj is None:
+            self.message_user(request, "Bike not found.", level=messages.ERROR)
+            return HttpResponseRedirect(reverse('admin:Application_bikemodel_changelist'))
+
+        if not self.has_add_permission(request):
+            self.message_user(request, "You do not have permission to duplicate bikes.", level=messages.ERROR)
+            return HttpResponseRedirect(reverse('admin:Application_bikemodel_change', args=[object_id]))
+
+        cloned = clone_bike(obj)
+        self.message_user(
+            request,
+            format_html(
+                'Bike duplicated successfully as <strong>"{}"</strong>. You are now editing the duplicate. Update the name and any other fields, then click Save.',
+                cloned.name
+            ),
+            level=messages.SUCCESS
+        )
+        return HttpResponseRedirect(reverse('admin:Application_bikemodel_change', args=[cloned.pk]))
+
+    def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        if object_id:
+            try:
+                extra_context['duplicate_url'] = reverse('admin:Application_bikemodel_duplicate', args=[object_id])
+            except Exception:
+                pass
+        return super().changeform_view(request, object_id=object_id, form_url=form_url, extra_context=extra_context)
 
 class AccessoriesSubCategoryInline(admin.TabularInline):
     model = AccessoriesSubCategoryModel
@@ -175,22 +298,134 @@ class AccessoriesSubCategoryAdmin(admin.ModelAdmin):
     list_filter = ('category',)
 
 @admin.register(AccessoriesCategoryModel)
-class AccessoriesCategoryAdmin(admin.ModelAdmin):
+class AccessoriesCategoryAdmin(PreserveFilesAdminMixin, admin.ModelAdmin):
     list_display = ('name',)
     search_fields = ('name',)
     list_filter = ('name',)
     inlines = [AccessoriesSubCategoryInline]
 
-class AccessoryImagesInline(admin.TabularInline):
+class AccessoryImagesInline(PreserveFilesAdminMixin, admin.TabularInline):
     model = AccessoryImagesModel
     extra = 1
 
 @admin.register(AccessoriesModel)
-class AccessoriesAdmin(admin.ModelAdmin):
-    list_display = ('name', 'created')
-    search_fields = ('name','brand')
-    list_filter = ('name','brand')
+class AccessoriesAdmin(PreserveFilesAdminMixin, admin.ModelAdmin):
+    change_form_template = 'admin/Application/accessoriesmodel/change_form.html'
+    list_display = ('name', 'model_name', 'model_no', 'brand', 'sub_category', 'price', 'is_available', 'is_out_of_stock', 'created')
+    search_fields = ('name', 'model_name', 'model_no', 'brand__brand_name', 'sub_category__name', 'sub_category__category__name')
+    list_filter = ('brand', 'sub_category__category', 'sub_category', 'speed', 'tire_type', 'valve_type', 'is_available', 'is_out_of_stock')
     inlines = [AccessoryImagesInline]
+
+    save_as = True
+    actions = ['duplicate_accessory']
+
+    fieldsets = (
+        ('Basic Information', {
+            'fields': (
+                'name',
+                'model_name',
+                'model_no',
+                'brand',
+                'sub_category',
+                'special_tag',
+                'description',
+            )
+        }),
+        ('Filter Specifications (Optional)', {
+            'description': 'Fill in only the filter specifications relevant to this spare or accessory. Leave blank if not applicable.',
+            'fields': (
+                ('speed', 'tire_type'),
+                ('hub_width', 'valve_type'),
+                ('size', 'ml'),
+                ('color', 'material'),
+                ('bike_mounted_type', 'warranty'),
+            )
+        }),
+        ('Pricing & Stock', {
+            'fields': (
+                'price',
+                'stock',
+                'is_available',
+                'is_out_of_stock',
+                'is_discount',
+                'discount_price',
+                'discount_percentage',
+            )
+        }),
+        ('Display & Settings', {
+            'fields': (
+                'is_dark',
+                'online_purchase_enabled',
+                'shipping_charge',
+            )
+        }),
+    )
+
+    @admin.action(description="Duplicate selected accessories (creates a copy with all images)")
+    def duplicate_accessory(self, request, queryset):
+        duplicated = []
+        for acc in queryset:
+            cloned = clone_accessory(acc)
+            duplicated.append(cloned)
+
+        if len(duplicated) == 1:
+            cloned = duplicated[0]
+            self.message_user(
+                request,
+                format_html(
+                    'Accessory duplicated successfully as <strong>"{}"</strong>. You are now editing the duplicate. Update the name and any other fields, then click Save.',
+                    cloned.name
+                ),
+                level=messages.SUCCESS
+            )
+            return HttpResponseRedirect(reverse('admin:Application_accessoriesmodel_change', args=[cloned.pk]))
+        else:
+            self.message_user(
+                request,
+                f"Successfully duplicated {len(duplicated)} accessory(ies). You can now edit each duplicate to change its name and details.",
+                level=messages.SUCCESS
+            )
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                '<path:object_id>/duplicate/',
+                self.admin_site.admin_view(self.duplicate_accessory_view),
+                name='Application_accessoriesmodel_duplicate',
+            ),
+        ]
+        return custom_urls + urls
+
+    def duplicate_accessory_view(self, request, object_id):
+        obj = self.get_object(request, object_id)
+        if obj is None:
+            self.message_user(request, "Accessory not found.", level=messages.ERROR)
+            return HttpResponseRedirect(reverse('admin:Application_accessoriesmodel_changelist'))
+
+        if not self.has_add_permission(request):
+            self.message_user(request, "You do not have permission to duplicate accessories.", level=messages.ERROR)
+            return HttpResponseRedirect(reverse('admin:Application_accessoriesmodel_change', args=[object_id]))
+
+        cloned = clone_accessory(obj)
+        self.message_user(
+            request,
+            format_html(
+                'Accessory duplicated successfully as <strong>"{}"</strong>. You are now editing the duplicate. Update the name and any other fields, then click Save.',
+                cloned.name
+            ),
+            level=messages.SUCCESS
+        )
+        return HttpResponseRedirect(reverse('admin:Application_accessoriesmodel_change', args=[cloned.pk]))
+
+    def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        if object_id:
+            try:
+                extra_context['duplicate_url'] = reverse('admin:Application_accessoriesmodel_duplicate', args=[object_id])
+            except Exception:
+                pass
+        return super().changeform_view(request, object_id=object_id, form_url=form_url, extra_context=extra_context)
 
 @admin.register(GuideAndTrainerModel)
 class GuideAndTrainerAdmin(admin.ModelAdmin):

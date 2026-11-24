@@ -79,17 +79,14 @@ def clone_bike(original_bike, new_name=None):
 
         # 2. Deep-copy BikeSizesModel
         for bs in original_bike.bike_sizes.all():
-            BikeSizesModel.objects.create(
-                bike=new_bike,
-                bike_size=bs.bike_size,
-                price=bs.price,
-                stock=bs.stock,
-                is_available=bs.is_available,
-                is_out_of_stock=bs.is_out_of_stock,
-                is_discount=bs.is_discount,
-                discount_price=bs.discount_price,
-                discount_percentage=bs.discount_percentage,
-            )
+            size_kwargs = {
+                'bike': new_bike,
+                'bike_size': bs.bike_size,
+            }
+            for attr in ['price', 'stock', 'is_available', 'is_out_of_stock', 'is_discount', 'discount_price', 'discount_percentage']:
+                if hasattr(bs, attr):
+                    size_kwargs[attr] = getattr(bs, attr)
+            BikeSizesModel.objects.create(**size_kwargs)
 
         # 3. Deep-copy BikeColorsModel and nested BikeImagesModel
         for color_obj in original_bike.bike_colors.all():
