@@ -177,41 +177,15 @@ class BikeAdmin(PreserveFilesAdminMixin, nested_admin.NestedModelAdmin):
     ]
 
     fieldsets = (
-        ('Basic Information', {
+        (None, {
             'fields': (
-                'name',
-                ('brand', 'category'),
-                'special_tag',
-                'description',
-            )
-        }),
-        ('Specifications', {
-            'fields': (
-                ('wheel_size', 'sizes'),
-                ('material', 'suspension'),
-                'rear_suspension_travel',
-            )
-        }),
-        ('Default / Base Pricing & Stock', {
-            'description': 'Base pricing for the bike. When size variants are configured below in "Bike Sizes & Prices", each size has its own specific price and stock.',
-            'fields': (
-                ('price', 'stock'),
-                ('is_available', 'is_out_of_stock'),
-                ('is_discount', 'discount_price', 'discount_percentage'),
-            )
-        }),
-        ('Display & Media', {
-            'fields': (
-                ('background_color', 'text_color'),
-                'is_dark',
-                ('is_featured', 'featured_image'),
-                'youtube_link',
-            )
-        }),
-        ('E-commerce & Shipping', {
-            'fields': (
-                ('online_purchase_enabled', 'shipping_charge'),
-            )
+                'name','wheel_size','sizes','material','suspension',
+                'rear_suspension_travel', 'description', 'special_tag', 
+                'brand', 'category', 'price','is_discount', 'discount_price', 
+                'discount_percentage', 'background_color', 'text_color', 'is_dark', 
+                'is_featured', 'featured_image', 'youtube_link','is_available',
+                'is_out_of_stock','stock','online_purchase_enabled','shipping_charge'
+                )
         }),
     )
     
@@ -311,55 +285,13 @@ class AccessoryImagesInline(PreserveFilesAdminMixin, admin.TabularInline):
 @admin.register(AccessoriesModel)
 class AccessoriesAdmin(PreserveFilesAdminMixin, admin.ModelAdmin):
     change_form_template = 'admin/Application/accessoriesmodel/change_form.html'
-    list_display = ('name', 'model_name', 'model_no', 'brand', 'sub_category', 'price', 'is_available', 'is_out_of_stock', 'created')
-    search_fields = ('name', 'model_name', 'model_no', 'brand__brand_name', 'sub_category__name', 'sub_category__category__name')
-    list_filter = ('brand', 'sub_category__category', 'sub_category', 'speed', 'tire_type', 'valve_type', 'is_available', 'is_out_of_stock')
+    list_display = ('name', 'created')
+    search_fields = ('name','brand')
+    list_filter = ('name','brand')
     inlines = [AccessoryImagesInline]
 
     save_as = True
     actions = ['duplicate_accessory']
-
-    fieldsets = (
-        ('Basic Information', {
-            'fields': (
-                'name',
-                'model_name',
-                'model_no',
-                'brand',
-                'sub_category',
-                'special_tag',
-                'description',
-            )
-        }),
-        ('Filter Specifications (Optional)', {
-            'description': 'Fill in only the filter specifications relevant to this spare or accessory. Leave blank if not applicable.',
-            'fields': (
-                ('speed', 'tire_type'),
-                ('hub_width', 'valve_type'),
-                ('size', 'ml'),
-                ('color', 'material'),
-                ('bike_mounted_type', 'warranty'),
-            )
-        }),
-        ('Pricing & Stock', {
-            'fields': (
-                'price',
-                'stock',
-                'is_available',
-                'is_out_of_stock',
-                'is_discount',
-                'discount_price',
-                'discount_percentage',
-            )
-        }),
-        ('Display & Settings', {
-            'fields': (
-                'is_dark',
-                'online_purchase_enabled',
-                'shipping_charge',
-            )
-        }),
-    )
 
     @admin.action(description="Duplicate selected accessories (creates a copy with all images)")
     def duplicate_accessory(self, request, queryset):
