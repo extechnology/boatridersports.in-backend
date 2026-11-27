@@ -131,7 +131,7 @@ class AccessorySubCategorySerializers(serializers.ModelSerializer):
         return representation
 
 class AccessorySerializer(serializers.ModelSerializer):
-    category = serializers.SlugRelatedField(slug_field='name', read_only=True)
+    category = serializers.CharField(source='sub_category.category.name', read_only=True)
     sub_category = serializers.SlugRelatedField(slug_field='name', read_only=True)
     image_url = serializers.SerializerMethodField()
     brand = serializers.SlugRelatedField(slug_field='brand_name', read_only=True)
@@ -140,13 +140,26 @@ class AccessorySerializer(serializers.ModelSerializer):
         model = AccessoriesModel
         fields = [
             'name',
+            'model_name',
+            'model_no',
             'description',
+            'short_description',
             'price',
             'stock',
             'category',
             'sub_category',
-            'image_url',
             'brand',
+            'speed',
+            'tire_type',
+            'hub_width',
+            'valve_type',
+            'size',
+            'ml',
+            'color',
+            'bike_mounted_type',
+            'material',
+            'warranty',
+            'image_url',
         ]
     
     def get_image_url(self, instance):

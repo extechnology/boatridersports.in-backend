@@ -296,6 +296,11 @@ class AccessoriesFilter(filters.FilterSet):
         lookup_expr="icontains"
     )
 
+    short_description = filters.CharFilter(
+        field_name="short_description",
+        lookup_expr="icontains"
+    )
+
     # 🔹 Category / Sub Category / Brand filters (support getlist multi-select)
     category = filters.CharFilter(method="filter_category")
     sub_category = filters.CharFilter(method="filter_sub_category")
@@ -453,6 +458,7 @@ class AccessoriesFilter(filters.FilterSet):
             "model_name",
             "model_no",
             "description",
+            "short_description",
             "category",
             "sub_category",
             "brand",
@@ -607,7 +613,8 @@ def accessories_filters(request):
             Q(name__icontains=name) |
             Q(model_name__icontains=name) |
             Q(model_no__icontains=name) |
-            Q(description__icontains=name)
+            Q(description__icontains=name) |
+            Q(short_description__icontains=name)
         )
 
     if brand:

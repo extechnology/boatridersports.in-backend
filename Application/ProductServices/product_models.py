@@ -347,6 +347,7 @@ class AccessoriesModel(models.Model):
     model_name = models.CharField(max_length=255, null=True, blank=True, help_text="Enter the model name (e.g. Deore XT, GX Eagle)")
     model_no = models.CharField(max_length=255, null=True, blank=True, help_text="Enter the model number (e.g. RD-M8100, CN-M7100)")
     description = models.TextField(help_text="Enter the description for the accessory")
+    short_description = models.TextField(null=True, blank=True, help_text="Enter short description for the accessory")
 
     product_type = models.CharField(max_length=255,default = 'accessories',editable=False) 
     special_tag = models.ForeignKey(SpecialTagModel, on_delete=models.CASCADE,null = True, blank= True)
@@ -395,6 +396,12 @@ class AccessoriesModel(models.Model):
         if self.discount_price:
             return self.discount_price
         return self.price
+
+    @property
+    def category(self):
+        if self.sub_category and self.sub_category.category:
+            return self.sub_category.category
+        return None
 
 class AccessoryImagesModel(models.Model):
     accessory = models.ForeignKey(AccessoriesModel, on_delete=models.CASCADE,related_name='accessory_images')
