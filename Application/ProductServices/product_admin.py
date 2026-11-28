@@ -1,11 +1,48 @@
+import os
+import uuid
 from Application.ProductServices.product_models import ShippingChargeModel
 import nested_admin
 from django.contrib import admin, messages
+from django.core.cache import cache
 from django.utils.html import format_html
 from django.urls import path, reverse
 from django.http import HttpResponseRedirect
 from .admin_file_preserver import PreserveFilesAdminMixin
 from .admin_duplicator import clone_bike, clone_accessory
+
+
+class PreventDuplicateSubmitMixin:
+    """
+    Prevents duplicate POST submissions (double-click Save or slow upload retries)
+    using an atomic cache-backed submission token per form render.
+    """
+    def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        if request.method == 'POST':
+            token = request.POST.get('_admin_submit_token')
+            if token:
+                cache_key = f"admin_submit_lock_{request.user.pk}_{token}"
+                if not cache.add(cache_key, '1', timeout=300):
+                    self.message_user(
+                        request,
+                        "This submission is already being processed or was already saved. Duplicate save prevented.",
+                        level=messages.WARNING,
+                    )
+                    if object_id:
+                        return HttpResponseRedirect(
+                            reverse(
+                                f'admin:{self.model._meta.app_label}_{self.model._meta.model_name}_change',
+                                args=[object_id],
+                            )
+                        )
+                    return HttpResponseRedirect(
+                        reverse(
+                            f'admin:{self.model._meta.app_label}_{self.model._meta.model_name}_changelist'
+                        )
+                    )
+
+        extra_context['admin_submit_token'] = uuid.uuid4().hex
+        return super().changeform_view(request, object_id=object_id, form_url=form_url, extra_context=extra_context)
 from .product_models import (
     BikeCategoryModel, BikeBrandModel, ColorModel, SizeModel, SpecialTagModel,
     BikeModel, BikeSizesModel, BikeColorsModel, BikeImagesModel,
@@ -159,7 +196,7 @@ class BikeDownloadsModelInline(PreserveFilesAdminMixin, nested_admin.NestedStack
     extra = 1
 
 @admin.register(BikeModel)
-class BikeAdmin(PreserveFilesAdminMixin, nested_admin.NestedModelAdmin):
+class BikeAdmin(PreventDuplicateSubmitMixin, PreserveFilesAdminMixin, nested_admin.NestedModelAdmin):
     change_form_template = 'admin/Application/bikemodel/change_form.html'
     list_display = ('brand_img','name', 'special_tag', 'brand', 'category', 'price', 'discount_price', 'discount_percentage')
     search_fields = ('name', 'brand__brand_name', 'category__category_name', 'price', 'discount_price', 'discount_percentage')
@@ -241,6 +278,11 @@ class BikeAdmin(PreserveFilesAdminMixin, nested_admin.NestedModelAdmin):
             self.message_user(request, "You do not have permission to duplicate bikes.", level=messages.ERROR)
             return HttpResponseRedirect(reverse('admin:Application_bikemodel_change', args=[object_id]))
 
+        dup_lock_key = f"admin_dup_bike_{request.user.pk}_{object_id}"
+        if not cache.add(dup_lock_key, '1', timeout=3):
+            self.message_user(request, "Duplication is already in progress.", level=messages.WARNING)
+            return HttpResponseRedirect(reverse('admin:Application_bikemodel_change', args=[object_id]))
+
         cloned = clone_bike(obj)
         self.message_user(
             request,
@@ -251,6 +293,35 @@ class BikeAdmin(PreserveFilesAdminMixin, nested_admin.NestedModelAdmin):
             level=messages.SUCCESS
         )
         return HttpResponseRedirect(reverse('admin:Application_bikemodel_change', args=[cloned.pk]))
+
+    def save_formset(self, request, form, formset, change):
+        if formset.model is BikePostersModel:
+            instances = formset.save(commit=False)
+            for obj in formset.deleted_objects:
+                obj.delete()
+            seen = set()
+            if form.instance.pk:
+                for existing in BikePostersModel.objects.filter(bike=form.instance):
+                    seen.add((
+                        (existing.title or '').strip(),
+                        (existing.description or '').strip(),
+                        os.path.basename(existing.poster.name) if existing.poster else '',
+                    ))
+            for inst in instances:
+                if inst.pk is None:
+                    sig = (
+                        (inst.title or '').strip(),
+                        (inst.description or '').strip(),
+                        os.path.basename(inst.poster.name) if inst.poster else '',
+                    )
+                    if sig in seen:
+                        continue
+                    seen.add(sig)
+                inst.save()
+            formset.save_m2m()
+            self._cleanup_formset_temp_files(request, formset)
+            return
+        super().save_formset(request, form, formset, change)
 
     def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
         extra_context = extra_context or {}
@@ -283,7 +354,7 @@ class AccessoryImagesInline(PreserveFilesAdminMixin, admin.TabularInline):
     extra = 1
 
 @admin.register(AccessoriesModel)
-class AccessoriesAdmin(PreserveFilesAdminMixin, admin.ModelAdmin):
+class AccessoriesAdmin(PreventDuplicateSubmitMixin, PreserveFilesAdminMixin, admin.ModelAdmin):
     change_form_template = 'admin/Application/accessoriesmodel/change_form.html'
     list_display = ('name', 'created')
     search_fields = ('name','brand')

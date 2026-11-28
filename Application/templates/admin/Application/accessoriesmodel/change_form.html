@@ -4,10 +4,54 @@
 {% block object-tools-items %}
   {% if change and not is_popup and duplicate_url %}
     <li>
-      <a href="{{ duplicate_url }}" class="historylink">
+      <a href="{{ duplicate_url }}" class="historylink" id="duplicate-accessory-btn">
         Duplicate / Copy Accessory
       </a>
     </li>
   {% endif %}
   {{ block.super }}
+{% endblock %}
+
+{% block after_field_sets %}
+  {{ block.super }}
+  {% if admin_submit_token %}
+    <input type="hidden" name="_admin_submit_token" value="{{ admin_submit_token }}">
+  {% endif %}
+{% endblock %}
+
+{% block admin_change_form_document_ready %}
+  {{ block.super }}
+  <script>
+    (function () {
+      var form = document.querySelector('#content-main form');
+      if (form) {
+        form.addEventListener('submit', function (e) {
+          if (form.dataset.submitting === 'true') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return false;
+          }
+          form.dataset.submitting = 'true';
+          var buttons = form.querySelectorAll('.submit-row input[type="submit"], .submit-row button[type="submit"]');
+          buttons.forEach(function (btn) {
+            btn.style.pointerEvents = 'none';
+            btn.style.opacity = '0.65';
+            btn.style.cursor = 'wait';
+          });
+        });
+      }
+      var dupBtn = document.getElementById('duplicate-accessory-btn');
+      if (dupBtn) {
+        dupBtn.addEventListener('click', function (e) {
+          if (dupBtn.dataset.clicked === 'true') {
+            e.preventDefault();
+            return false;
+          }
+          dupBtn.dataset.clicked = 'true';
+          dupBtn.style.pointerEvents = 'none';
+          dupBtn.style.opacity = '0.65';
+        });
+      }
+    })();
+  </script>
 {% endblock %}
